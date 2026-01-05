@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DavideKra — Album</title>
+<title>DavideKra — Album 3D</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Inter:wght@700&display=swap" rel="stylesheet">
 
@@ -23,6 +23,7 @@ html,body{
   position:fixed;
   inset:0;
   perspective:1400px;
+  overflow:hidden;
 }
 #world{
   position:absolute;
@@ -38,37 +39,51 @@ html,body{
   align-items:center;
   justify-content:center;
   transform-style:preserve-3d;
-  transition:opacity .4s ease;
+  transition:opacity .25s ease;
 }
 
-.scene.hidden-meta .meta{
-  opacity:0;
+/* ===== BACKGROUND ===== */
+.scene{
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
 }
 
 /* ===== META ===== */
 .meta{
   text-align:center;
-  transition:opacity .4s ease;
+  transition:opacity .35s ease;
+  pointer-events:none;
+  max-width:86vw;
 }
 
 .meta h1{
   font-family:'Rubik Dirt', cursive;
   font-size:clamp(34px,6vw,68px);
   margin:0;
+  line-height:1.05;
+  text-shadow:0 12px 44px rgba(0,0,0,.95);
 }
 .meta .artist{
-  margin-top:8px;
+  margin-top:10px;
   opacity:.7;
+  text-shadow:0 10px 36px rgba(0,0,0,.9);
+}
+
+/* quando una scena è in play, nascondi titolo+artista */
+.scene.is-playing .meta{
+  opacity:0;
 }
 
 /* ===== KARAOKE ===== */
 #karaoke{
-  position:absolute;
+  position:fixed;
   inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
   pointer-events:none;
+  z-index:15;
 }
 #line{
   font-family:'Rubik Dirt', cursive;
@@ -78,11 +93,12 @@ html,body{
   line-height:1.25;
   text-shadow:0 12px 44px rgba(0,0,0,.95);
   opacity:0;
-  transition:opacity .3s ease;
+  transition:opacity .22s ease;
 }
 
 /* ===== PLAYER ===== */
 #audio{display:none}
+
 #controls{
   position:fixed;
   bottom:26px;
@@ -93,14 +109,18 @@ html,body{
   font-size:13px;
   opacity:.85;
   z-index:20;
+  user-select:none;
 }
 #controls button{
   background:none;
   border:none;
   color:inherit;
   cursor:pointer;
+  font-family:inherit;
 }
-#controls button:hover{text-decoration:underline}
+#controls button:hover{
+  text-decoration:underline;
+}
 </style>
 </head>
 
@@ -110,10 +130,10 @@ html,body{
   <div id="world"></div>
 </div>
 
-<!-- AUDIO -->
-<audio id="audio" preload="metadata"></audio>
+<div id="karaoke"><div id="line"></div></div>
 
-<!-- PLAYER -->
+<audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
+
 <div id="controls">
   <button id="back">−10s</button>
   <button id="play">play</button>
@@ -122,161 +142,218 @@ html,body{
 
 <script>
 /* =====================
-   TRACKLIST
+   TRACKLIST (2 TRACCE REALI)
    ===================== */
 const tracks = [
   {
-    title:"Sai tenere un segreto?",
-    artist:"DavideKra",
-    cover:"https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
-    audio:"DavideKra - 02 - Sai Tenere Un Segreto.mp3",
-    vtt:"DavideKra - 02 - Sai Tenere Un Segreto.vtt"
+    title: "Sai tenere un segreto?",
+    artist: "DavideKra",
+    cover: "https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
+    audio: "DavideKra - 02 - Sai Tenere Un Segreto.mp3",
+    vtt:   "DavideKra - 02 - Sai Tenere Un Segreto.vtt"
   },
   {
-    title:"2 Cose Insieme",
-    artist:"DavideKra",
-    cover:"https://i.ibb.co/yndKknVM/2-cose-insieme.png",
-    audio:null,
-    vtt:null
+    title: "2 Cose Insieme",
+    artist: "DavideKra",
+    cover: "https://i.ibb.co/yndKknVM/2-cose-insieme.png",
+    audio: "DavideKra - 03 - 2 Cose Insieme.mp3",
+    vtt:   "DavideKra - 03 - 2 Cose Insieme.vtt"
   }
 ];
-
-const SCENE_DEPTH = 1200;
-const world = document.getElementById("world");
-const scenes = [];
 
 /* =====================
    CREATE SCENES
    ===================== */
-tracks.forEach((t,i)=>{
-  const s=document.createElement("div");
-  s.className="scene";
-  s.style.background=`
-    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
-    url("${t.cover}")`;
-  s.style.backgroundRepeat="no-repeat";
-  s.style.backgroundPosition="center";
-  s.style.backgroundSize="contain";
-
-  s.innerHTML=`
+const SCENE_DEPTH = 1200;
+const world = document.getElementById("world");
+const scenes = tracks.map((t, i) => {
+  const s = document.createElement("div");
+  s.className = "scene";
+  s.style.backgroundImage = `
+    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.90)),
+    url("${t.cover}")
+  `;
+  s.innerHTML = `
     <div class="meta">
       <h1>${t.title}</h1>
       <div class="artist">${t.artist}</div>
     </div>
   `;
-
-  s.style.transform=`translateZ(${-i*SCENE_DEPTH}px)`;
   world.appendChild(s);
-
-  scenes.push({el:s,z:-i*SCENE_DEPTH,track:t});
+  return { el: s, z: -i * SCENE_DEPTH, track: t };
 });
 
 /* =====================
-   CAMERA + ACTIVE SCENE
+   CAMERA SCROLL
    ===================== */
-let cameraZ=0;
-let activeIndex=0;
-const audio=document.getElementById("audio");
-const playBtn=document.getElementById("play");
+let cameraZ = 0;
+let activeIndex = 0;
 
-function stopAudio(){
-  audio.pause();
-  audio.src="";
-  playBtn.textContent="play";
-  scenes.forEach(s=>s.el.classList.remove("hidden-meta"));
-  document.getElementById("line").style.opacity=0;
+const MAX_Z = SCENE_DEPTH * (tracks.length - 1);
+const SPEED = 0.9;
+
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+function computeActiveIndex(){
+  // scena "più vicina" a camera (rz vicino a 0)
+  let bestI = 0;
+  let bestD = Infinity;
+  for (let i=0;i<scenes.length;i++){
+    const rz = scenes[i].z + cameraZ;
+    const d = Math.abs(rz);
+    if (d < bestD){ bestD = d; bestI = i; }
+  }
+  return bestI;
 }
 
 function updateScenes(){
-  let closest=0;
-  let minDist=Infinity;
+  scenes.forEach((s) => {
+    const rz = s.z + cameraZ;
+    const dist = Math.abs(rz);
 
-  scenes.forEach((s,i)=>{
-    const rz=s.z+cameraZ;
-    const dist=Math.abs(rz);
-    if(dist<minDist){minDist=dist;closest=i;}
+    const t = clamp(1 - (dist / SCENE_DEPTH), 0, 1);
+    const scale = 0.72 + t * 0.28;
+    const opacity = t;
 
-    const t=Math.max(0,1-dist/SCENE_DEPTH);
-    s.el.style.transform=`translateZ(${rz}px) scale(${0.7+t*0.3})`;
-    s.el.style.opacity=t;
+    s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
+    s.el.style.opacity = opacity.toFixed(3);
   });
 
-  if(closest!==activeIndex){
-    activeIndex=closest;
-    stopAudio();
+  const idx = computeActiveIndex();
+  if (idx !== activeIndex){
+    activeIndex = idx;
+    stopAndReset(); // quando cambi scena, stop
   }
 }
 
-window.addEventListener("wheel",(e)=>{
+window.addEventListener("wheel", (e) => {
   e.preventDefault();
-  cameraZ+=e.deltaY*0.9;
-  cameraZ=Math.max(0,Math.min((tracks.length-1)*SCENE_DEPTH,cameraZ));
+  cameraZ = clamp(cameraZ + e.deltaY * SPEED, 0, MAX_Z);
   updateScenes();
-},{passive:false});
-
-updateScenes();
+}, { passive:false });
 
 /* =====================
-   PLAY / PAUSE
+   AUDIO + KARAOKE
    ===================== */
-playBtn.onclick=()=>{
-  const scene=scenes[activeIndex];
-  if(!scene.track.audio) return;
+const audio = document.getElementById("audio");
+const playBtn = document.getElementById("play");
+const line = document.getElementById("line");
 
-  if(audio.paused){
-    audio.src=scene.track.audio;
-    audio.play();
-    playBtn.textContent="pause";
-    scene.el.classList.add("hidden-meta");
-  }else{
-    audio.pause();
-    playBtn.textContent="play";
-    scene.el.classList.remove("hidden-meta");
+let currentTrackIndex = null;
+let trackEl = null;
+let lastCue = null;
+
+function clearKaraoke(){
+  lastCue = null;
+  line.style.opacity = 0;
+  line.textContent = "";
+  if (trackEl){
+    try{ trackEl.remove(); }catch(e){}
+    trackEl = null;
   }
-};
+}
 
-document.getElementById("back").onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
-document.getElementById("forward").onclick=()=>audio.currentTime=Math.min(audio.duration||0,audio.currentTime+10);
+function stopAndReset(){
+  // stop audio
+  if (!audio.paused) audio.pause();
+  audio.removeAttribute("src");
+  audio.load();
+  playBtn.textContent = "play";
 
-/* =====================
-   KARAOKE (SCENA 1)
-   ===================== */
-const karaoke=document.createElement("div");
-karaoke.id="karaoke";
-karaoke.innerHTML='<div id="line"></div>';
-document.body.appendChild(karaoke);
+  // meta visibile ovunque
+  scenes.forEach(s => s.el.classList.remove("is-playing"));
 
-const line=document.getElementById("line");
-let trackEl=null,lastCue=null;
+  // karaoke reset
+  clearKaraoke();
 
-audio.addEventListener("loadedmetadata",()=>{
-  if(trackEl) trackEl.remove();
-  const scene=scenes[activeIndex];
-  if(!scene.track.vtt) return;
+  currentTrackIndex = null;
+}
 
-  trackEl=document.createElement("track");
-  trackEl.kind="subtitles";
-  trackEl.src=scene.track.vtt;
-  trackEl.default=true;
+function loadTrack(index){
+  const t = scenes[index].track;
+
+  // se stiamo già su quella traccia e src già caricato, non ricaricare
+  if (currentTrackIndex === index && audio.src) return;
+
+  clearKaraoke();
+
+  currentTrackIndex = index;
+  audio.src = t.audio;
+
+  // aggancia subito il <track> (si carica quando parte/metadata)
+  trackEl = document.createElement("track");
+  trackEl.kind = "subtitles";
+  trackEl.srclang = "it";
+  trackEl.label = "lyrics";
+  trackEl.src = t.vtt;
+  trackEl.default = true;
   audio.appendChild(trackEl);
 
-  trackEl.addEventListener("load",()=>{
-    const track=trackEl.track;
-    track.mode="hidden";
-    track.addEventListener("cuechange",()=>{
-      const a=track.activeCues;
-      if(!a||!a.length){line.style.opacity=0;return;}
-      const cue=a[0];
-      if(cue===lastCue)return;
-      lastCue=cue;
-      line.style.opacity=0;
-      setTimeout(()=>{
-        line.textContent=cue.text;
-        line.style.opacity=1;
-      },200);
-    });
+  // quando il track è pronto: cuechange
+  trackEl.addEventListener("load", () => {
+    const tt = trackEl.track;
+    tt.mode = "hidden";
+
+    const refresh = () => {
+      const a = tt.activeCues;
+      if (!a || !a.length){
+        line.style.opacity = 0;
+        return;
+      }
+      const cue = a[0];
+      if (cue === lastCue) return;
+      lastCue = cue;
+
+      line.style.opacity = 0;
+      setTimeout(() => {
+        line.textContent = cue.text;
+        line.style.opacity = 1;
+      }, 160);
+    };
+
+    tt.addEventListener("cuechange", refresh);
+    audio.addEventListener("timeupdate", refresh);
   });
+}
+
+playBtn.addEventListener("click", async () => {
+  const t = scenes[activeIndex].track;
+  if (!t.audio || !t.vtt) return; // sicurezza
+
+  if (audio.paused){
+    // carica/associa la traccia della scena attiva
+    loadTrack(activeIndex);
+
+    // play
+    await audio.play();
+    playBtn.textContent = "pause";
+
+    // nascondi meta SOLO della scena attiva
+    scenes.forEach((s, i) => s.el.classList.toggle("is-playing", i === activeIndex));
+  } else {
+    audio.pause();
+    playBtn.textContent = "play";
+    scenes.forEach(s => s.el.classList.remove("is-playing"));
+    // testo sparisce quando metti in pausa
+    line.style.opacity = 0;
+  }
 });
+
+document.getElementById("back").addEventListener("click", () => {
+  audio.currentTime = Math.max(0, audio.currentTime - 10);
+});
+document.getElementById("forward").addEventListener("click", () => {
+  audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+});
+
+audio.addEventListener("ended", () => {
+  playBtn.textContent = "play";
+  scenes.forEach(s => s.el.classList.remove("is-playing"));
+  line.style.opacity = 0;
+});
+
+/* init */
+updateScenes();
 </script>
 
 </body>
