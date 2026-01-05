@@ -5,9 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sai tenere un segreto?</title>
 
+<!-- FONT HORROR LEGGIBILE -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&display=swap" rel="stylesheet">
+
 <style>
 :root{
-  --fg:#fff;
+  --fg:#ffffff;
   --muted:rgba(255,255,255,.65);
 }
 
@@ -15,40 +18,73 @@
 html,body{margin:0;height:100%}
 
 body{
-  font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family:'Rubik Dirt', system-ui, sans-serif;
   color:var(--fg);
   overflow:hidden;
-
   background:#000;
+}
+
+/* =====================
+   BACKGROUND LAYER (ZOOM)
+   ===================== */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
   background-image:
     linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.85)),
     url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
+  animation:bgZoom 18s ease-in-out infinite;
+  transform-origin:center;
 }
 
-/* TITLE */
-header{
+@keyframes bgZoom{
+  0%   { transform:scale(1); }
+  50%  { transform:scale(1.06); }
+  100% { transform:scale(1); }
+}
+
+/* =====================
+   INTRO TITLE (CENTER)
+   ===================== */
+#intro{
   position:fixed;
-  top:28px;
-  left:50%;
-  transform:translateX(-50%);
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
   text-align:center;
-  z-index:10;
+  background:rgba(0,0,0,.35);
+  backdrop-filter:blur(2px);
+  z-index:15;
+  transition:opacity .8s ease;
 }
-header h1{
+
+#intro.hide{
+  opacity:0;
+  pointer-events:none;
+}
+
+#intro h1{
   margin:0;
-  font-size:clamp(26px,4vw,44px);
-  font-weight:800;
+  font-size:clamp(34px,6vw,64px);
+  letter-spacing:1px;
 }
-header .subtitle{
-  margin-top:6px;
-  font-size:12px;
+
+#intro .author{
+  margin-top:14px;
+  font-size:16px;
   color:var(--muted);
 }
 
-/* STAGE */
+/* =====================
+   STAGE
+   ===================== */
 #stage{
   position:fixed;
   inset:0;
@@ -63,22 +99,21 @@ header .subtitle{
   max-width:1100px;
   text-align:center;
   font-size:clamp(34px,5vw,64px);
-  font-weight:800;
   line-height:1.25;
-  text-shadow:
-    0 12px 44px rgba(0,0,0,.9);
+  text-shadow:0 12px 44px rgba(0,0,0,.9);
   opacity:0;
   transition:all .55s ease;
 }
 
-/* BASE STATE — QUESTO È IL FIX */
 #line.visible{
   opacity:1;
   transform:none;
   filter:none;
 }
 
-/* PLAYER */
+/* =====================
+   PLAYER MINIMAL
+   ===================== */
 #audio{display:none}
 
 #controls{
@@ -87,38 +122,42 @@ header .subtitle{
   left:50%;
   transform:translateX(-50%);
   display:flex;
-  gap:22px;
+  gap:24px;
   font-size:13px;
   color:var(--muted);
   z-index:10;
 }
+
 #controls button{
   background:none;
   border:none;
   color:inherit;
   cursor:pointer;
-  font:inherit;
+  font-family:inherit;
 }
+
 #controls button:hover{
   color:#fff;
   text-decoration:underline;
 }
 
-/* START */
+/* =====================
+   START OVERLAY
+   ===================== */
 #hint{
   position:fixed;
   inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,.65);
   font-size:18px;
-  font-weight:700;
   cursor:pointer;
   z-index:20;
 }
 
-/* TRANSITIONS (solo trasformazioni, MAI opacity finale) */
+/* =====================
+   TRANSITIONS
+   ===================== */
 .out{opacity:0}
 .in{opacity:1}
 
@@ -150,10 +189,11 @@ header .subtitle{
 
 <body>
 
-<header>
+<!-- INTRO -->
+<div id="intro">
   <h1>Sai tenere un segreto?</h1>
-  <div class="subtitle">DavideKra</div>
-</header>
+  <div class="author">DavideKra</div>
+</div>
 
 <div id="stage">
   <div id="line" class="visible">…</div>
@@ -181,56 +221,57 @@ const audio = document.getElementById("audio");
 const trackEl = document.getElementById("lyricsTrack");
 const lineEl = document.getElementById("line");
 const hint = document.getElementById("hint");
+const intro = document.getElementById("intro");
 
 const btnPlay = document.getElementById("play");
 const btnBack = document.getElementById("back");
 const btnForw = document.getElementById("forward");
 
-let lastCue = null;
+let lastCue=null;
 
-const transitions = ["fade","slide-up","slide-down","blur","zoom","rotate","stretch","slide-x"];
-function randomT(){ return transitions[Math.floor(Math.random()*transitions.length)] }
+const transitions=["fade","slide-up","slide-down","blur","zoom","rotate","stretch","slide-x"];
+const rand=()=>transitions[Math.floor(Math.random()*transitions.length)];
 
 /* START */
-hint.onclick = async ()=>{
+hint.onclick=async()=>{
   await audio.play();
   hint.style.display="none";
+  intro.classList.add("hide");
   btnPlay.textContent="pause";
 };
 
 /* PLAY */
-btnPlay.onclick = ()=>{
+btnPlay.onclick=()=>{
   if(audio.paused){
-    audio.play(); btnPlay.textContent="pause";
+    audio.play();btnPlay.textContent="pause";
   }else{
-    audio.pause(); btnPlay.textContent="play";
+    audio.pause();btnPlay.textContent="play";
   }
 };
 
 /* SEEK */
-btnBack.onclick = ()=> audio.currentTime=Math.max(0,audio.currentTime-10);
-btnForw.onclick = ()=> audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
+btnBack.onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
+btnForw.onclick=()=>audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
 audio.addEventListener("seeked",()=>lastCue=null);
 
 /* KARAOKE */
 trackEl.addEventListener("load",()=>{
-  const track = trackEl.track;
+  const track=trackEl.track;
   track.mode="hidden";
 
-  const refresh = ()=>{
-    const a = track.activeCues;
-    if(!a || !a.length){
+  const refresh=()=>{
+    const a=track.activeCues;
+    if(!a||!a.length){
       lineEl.textContent="…";
       lineEl.className="visible in fade";
       return;
     }
-    const cue = a[0];
-    if(cue===lastCue) return;
+    const cue=a[0];
+    if(cue===lastCue)return;
     lastCue=cue;
 
-    const t = randomT();
+    const t=rand();
     lineEl.className=`out ${t}`;
-
     setTimeout(()=>{
       lineEl.textContent=cue.text;
       lineEl.className=`visible in ${t}`;
