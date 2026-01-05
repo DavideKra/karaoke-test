@@ -3,25 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>Sai tenere un segreto?</title>
 
 <style>
-/* =====================
-   BASE
-   ===================== */
 :root{
-  --fg:#ffffff;
-  --muted:rgba(255,255,255,.6);
-  --overlay:rgba(0,0,0,.7);
+  --fg:#fff;
+  --muted:rgba(255,255,255,.65);
 }
 
 *{box-sizing:border-box}
-
-html,body{
-  margin:0;
-  height:100%;
-}
+html,body{margin:0;height:100%}
 
 body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -37,34 +28,28 @@ body{
   background-size:contain;
 }
 
-/* =====================
-   TITLE
-   ===================== */
+/* Title */
 header{
   position:fixed;
-  top:32px;
+  top:28px;
   left:50%;
   transform:translateX(-50%);
   text-align:center;
   z-index:5;
 }
-
 header h1{
   margin:0;
-  font-size:clamp(26px,4vw,42px);
-  font-weight:800;
-  letter-spacing:.4px;
+  font-size:clamp(26px,4vw,44px);
+  font-weight:850;
+  letter-spacing:.3px;
 }
-
 header .subtitle{
   margin-top:6px;
   font-size:12px;
   color:var(--muted);
 }
 
-/* =====================
-   STAGE
-   ===================== */
+/* Stage */
 #stage{
   position:fixed;
   inset:0;
@@ -74,54 +59,47 @@ header .subtitle{
   padding:40px;
   pointer-events:none;
 }
-
 #line{
   max-width:1100px;
   text-align:center;
   font-size:clamp(34px,5vw,64px);
-  font-weight:800;
+  font-weight:850;
   line-height:1.25;
   text-shadow:
-    0 10px 40px rgba(0,0,0,.9),
-    0 0 20px rgba(0,0,0,.5);
+    0 12px 44px rgba(0,0,0,.92),
+    0 0 22px rgba(0,0,0,.45);
   opacity:0;
   transition:all .6s ease;
 }
 
-/* =====================
-   PLAYER (MINIMAL)
-   ===================== */
-#audio{display:none}
+/* Controls minimal */
+#audio{ display:none }
 
 #controls{
   position:fixed;
-  bottom:28px;
+  bottom:26px;
   left:50%;
   transform:translateX(-50%);
   display:flex;
   gap:22px;
+  z-index:10;
   font-size:13px;
   color:var(--muted);
-  z-index:10;
 }
-
 #controls button{
   background:none;
   border:none;
   color:inherit;
-  cursor:pointer;
   padding:0;
-  font-family:inherit;
+  cursor:pointer;
+  font:inherit;
 }
-
 #controls button:hover{
   color:#fff;
   text-decoration:underline;
 }
 
-/* =====================
-   START OVERLAY
-   ===================== */
+/* First interaction overlay */
 #hint{
   position:fixed;
   inset:0;
@@ -130,22 +108,39 @@ header .subtitle{
   justify-content:center;
   background:rgba(0,0,0,.65);
   font-size:18px;
-  font-weight:700;
+  font-weight:750;
   cursor:pointer;
   z-index:20;
 }
 
-/* =====================
-   TRANSITIONS (10)
-   ===================== */
+/* Debug */
+#debug{
+  position:fixed;
+  left:16px;
+  bottom:16px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.14);
+  color:rgba(255,255,255,.75);
+  font-size:12px;
+  z-index:30;
+  backdrop-filter: blur(10px);
+  max-width:min(560px, 92vw);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* 10 transitions */
 .t-fade-in{opacity:1;transform:scale(1)}
 .t-fade-out{opacity:0;transform:scale(.92)}
 
 .t-slide-up-in{opacity:1;transform:translateY(0)}
-.t-slide-up-out{opacity:0;transform:translateY(40px)}
+.t-slide-up-out{opacity:0;transform:translateY(44px)}
 
 .t-slide-down-in{opacity:1;transform:translateY(0)}
-.t-slide-down-out{opacity:0;transform:translateY(-40px)}
+.t-slide-down-out{opacity:0;transform:translateY(-44px)}
 
 .t-blur-in{opacity:1;filter:blur(0)}
 .t-blur-out{opacity:0;filter:blur(14px)}
@@ -160,16 +155,17 @@ header .subtitle{
 .t-flicker-out{opacity:0}
 
 .t-stretch-in{opacity:1;transform:scaleY(1)}
-.t-stretch-out{opacity:0;transform:scaleY(.6)}
+.t-stretch-out{opacity:0;transform:scaleY(.62)}
 
 .t-slide-x-in{opacity:1;transform:translateX(0)}
-.t-slide-x-out{opacity:0;transform:translateX(-60px)}
+.t-slide-x-out{opacity:0;transform:translateX(-66px)}
 
 .t-glow-in{
   opacity:1;
   text-shadow:
     0 0 40px rgba(255,255,255,.9),
-    0 0 20px rgba(255,255,255,.5);
+    0 0 22px rgba(255,255,255,.55),
+    0 12px 44px rgba(0,0,0,.92);
 }
 .t-glow-out{opacity:0;text-shadow:none}
 </style>
@@ -183,7 +179,7 @@ header .subtitle{
 </header>
 
 <div id="stage">
-  <div id="line">Ascolta…</div>
+  <div id="line">…</div>
 </div>
 
 <div id="controls">
@@ -193,18 +189,25 @@ header .subtitle{
 </div>
 
 <div id="hint">clicca per iniziare</div>
+<div id="debug">Debug: in attesa…</div>
 
-<audio id="audio" preload="metadata">
+<audio id="audio" preload="metadata" crossorigin="anonymous">
   <source src="DavideKra - 02 - Sai Tenere Un Segreto.mp3" type="audio/mpeg">
-  <track kind="metadata"
+  <!-- IMPORTANT: subtitles è più compatibile di metadata -->
+  <track id="lyricsTrack"
+         kind="subtitles"
+         srclang="it"
+         label="Lyrics"
          src="DavideKra - 02 - Sai Tenere Un Segreto.vtt"
          default>
 </audio>
 
 <script>
-const audio = document.getElementById("audio");
-const lineEl = document.getElementById("line");
-const hint = document.getElementById("hint");
+const audio   = document.getElementById("audio");
+const trackEl = document.getElementById("lyricsTrack");
+const lineEl  = document.getElementById("line");
+const hint    = document.getElementById("hint");
+const debugEl = document.getElementById("debug");
 
 const btnPlay = document.getElementById("play");
 const btnBack = document.getElementById("back");
@@ -212,23 +215,75 @@ const btnForw = document.getElementById("forward");
 
 let lastCue = null;
 
-const transitions = [
-  "fade","slide-up","slide-down","blur","zoom",
-  "rotate","flicker","stretch","slide-x","glow"
-];
-
+const transitions = ["fade","slide-up","slide-down","blur","zoom","rotate","flicker","stretch","slide-x","glow"];
 function randomTransition(){
   return transitions[Math.floor(Math.random()*transitions.length)];
 }
+function setDebug(msg){ debugEl.textContent = "Debug: " + msg; }
 
-/* START */
-hint.addEventListener("click", async ()=>{
-  await audio.play();
-  hint.style.display="none";
-  btnPlay.textContent="pause";
+function showCueText(text){
+  const t = randomTransition();
+  lineEl.className = `t-${t}-out`;
+  setTimeout(()=>{
+    lineEl.textContent = text;
+    lineEl.className = `t-${t}-in`;
+  }, 260);
+}
+
+function attachKaraoke(){
+  const track = trackEl.track; // TextTrack
+  track.mode = "hidden";       // non mostra sottotitoli nativi, ma attiva i cue
+
+  const cues = track.cues;
+  const cueCount = cues ? cues.length : 0;
+  setDebug(`VTT caricato ✓ (${cueCount} cues)`);
+
+  // Aggiorna subito all'avvio / dopo seek
+  const refresh = () => {
+    const active = track.activeCues;
+    if (!active || active.length === 0){
+      // se siamo prima del primo cue, mostra ellissi
+      lineEl.textContent = "…";
+      lineEl.className = "t-fade-in";
+      return;
+    }
+    const cue = active[0];
+    if (cue === lastCue) return;
+    lastCue = cue;
+    showCueText(cue.text);
+  };
+
+  track.addEventListener("cuechange", refresh);
+  audio.addEventListener("timeupdate", refresh); // fallback extra robusto
+  audio.addEventListener("seeked", () => { lastCue = null; refresh(); });
+
+  // refresh iniziale
+  refresh();
+}
+
+/* Se la track non carica, lo voglio sapere subito */
+trackEl.addEventListener("error", () => {
+  setDebug("ERRORE: il file .vtt non si carica (nome/path?)");
 });
 
-/* PLAY / PAUSE */
+/* Evento chiave: load del <track> */
+trackEl.addEventListener("load", () => {
+  attachKaraoke();
+});
+
+/* Start */
+hint.addEventListener("click", async ()=>{
+  try{
+    await audio.play();
+    hint.style.display="none";
+    btnPlay.textContent="pause";
+    setDebug(debugEl.textContent.replace("Debug: ", "") + " • audio ok");
+  }catch(e){
+    setDebug("ERRORE play: " + (e?.message || e));
+  }
+});
+
+/* Play / Pause */
 btnPlay.addEventListener("click", ()=>{
   if(audio.paused){
     audio.play();
@@ -239,36 +294,18 @@ btnPlay.addEventListener("click", ()=>{
   }
 });
 
-/* SEEK */
-btnBack.onclick = ()=> audio.currentTime=Math.max(0,audio.currentTime-10);
-btnForw.onclick = ()=> audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
-audio.addEventListener("seeked", ()=> lastCue=null);
+/* Seek */
+btnBack.onclick = ()=> audio.currentTime = Math.max(0, audio.currentTime - 10);
+btnForw.onclick = ()=> audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + 10);
 
-/* KARAOKE */
-audio.addEventListener("loadedmetadata", ()=>{
-  const track = audio.textTracks[0];
-  track.mode="hidden";
-
-  track.addEventListener("cuechange", ()=>{
-    if(!track.activeCues.length){
-      lineEl.textContent="…";
-      lineEl.className="t-fade-in";
-      return;
-    }
-
-    const cue = track.activeCues[0];
-    if(cue===lastCue) return;
-    lastCue = cue;
-
-    const t = randomTransition();
-    lineEl.className=`t-${t}-out`;
-
-    setTimeout(()=>{
-      lineEl.textContent=cue.text;
-      lineEl.className=`t-${t}-in`;
-    },300);
-  });
-});
+/* Ultimo: se dopo 2s la VTT non è ancora caricata, lo segnalo */
+setTimeout(()=>{
+  // readyState del <track>: 0=NONE, 1=LOADING, 2=LOADED, 3=ERROR
+  // non è standard ovunque, ma spesso c'è
+  if (!trackEl.track || !trackEl.track.cues){
+    setDebug("in attesa VTT… (se resta così: rinomina i file senza spazi)");
+  }
+}, 2000);
 </script>
 
 </body>
