@@ -11,10 +11,19 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
 :root{
-  --hudBg: rgba(0,0,0,.28);
+  --hudBg: rgba(0,0,0,.30);
   --hudBd: rgba(255,255,255,.12);
-  --hudTx: rgba(255,255,255,.86);
-  --hudTx2: rgba(255,255,255,.70);
+  --hudTx: rgba(255,255,255,.88);
+  --hudTx2: rgba(255,255,255,.72);
+}
+
+/* ===== FX CANVAS (overlay soft) ===== */
+#fx{
+  position:fixed; inset:0;
+  z-index:12; /* sopra scene, sotto lyrics/HUD */
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity:.55;
 }
 
 /* ===== STAGE ===== */
@@ -22,27 +31,73 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   position:fixed; inset:0;
   perspective:1700px;
   overflow:hidden;
+  z-index:10;
 }
-#world{position:absolute; inset:0; transform-style:preserve-3d;}
+#world{position:absolute; inset:0; transform-style:preserve-3d; will-change:transform;}
+
+/* micro-thump */
+@keyframes thump {
+  0%   { transform: translateZ(0) translateX(0) scale(1); }
+  35%  { transform: translateZ(0) translateX(-1.5px) scale(1.012); }
+  70%  { transform: translateZ(0) translateX(1.0px) scale(0.998); }
+  100% { transform: translateZ(0) translateX(0) scale(1); }
+}
+#world.thump{ animation: thump 240ms ease-out 1; }
 
 /* ===== SCENE ===== */
 .scene{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
   transform-style:preserve-3d;
+  will-change:transform,opacity;
+  opacity:0;
+}
+
+/* cover layer */
+.scene .cover{
+  position:absolute; inset:0;
+  background-image: var(--cover-url);
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  will-change:transform,opacity;
+  transform: translateZ(0);
 }
+
+/* overlay for readability */
 .scene::before{
   content:"";
   position:absolute; inset:0;
   background:linear-gradient(to bottom, rgba(0,0,0,.42), rgba(0,0,0,.90));
   pointer-events:none;
+  z-index:2;
 }
-.scene > *{position:relative; z-index:2}
 
+/* Reflection "floor" (compatibile) */
+.scene .reflect{
+  position:absolute;
+  left:50%;
+  top:52%;
+  width:min(88vw, 980px);
+  height:min(44vh, 520px);
+  transform: translateX(-50%) translateY(18vh);
+  background-image: var(--cover-url);
+  background-repeat:no-repeat;
+  background-position:center top;
+  background-size:contain;
+  opacity:.18;
+  filter: blur(1.4px) saturate(1.05);
+  transform-origin: top;
+  transform: translateX(-50%) translateY(18vh) scaleY(-1);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
+  z-index:1;
+  pointer-events:none;
+}
+
+/* content above */
+.scene > *{position:relative; z-index:3}
+
+/* ===== META center ===== */
 .meta{
   text-align:center;
   pointer-events:none;
@@ -60,97 +115,106 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   opacity:.72;
   text-shadow:0 10px 36px rgba(0,0,0,.9);
 }
+
+/* meta sparisce SOLO sulla scena della traccia che sta suonando */
 .scene.is-playing .meta{
   opacity:0;
   transform:translateY(-6px);
   filter:blur(.6px);
 }
 
-/* Stili titoli */
-.scene[data-style="thriller"] .meta .title{
-  font-family:"Rubik Dirt", cursive;
-  letter-spacing:.25px;
-}
-.scene[data-style="normale"] .meta .title{
-  font-family:"Roboto", system-ui, sans-serif;
-  font-weight:700;
-  letter-spacing:.15px;
-}
-.scene[data-style="amore"] .meta .title{
-  font-family:"Playfair Display", serif;
-  font-weight:700;
-  letter-spacing:.12px;
-}
-
-/* ===== HUD ===== */
-#hud{
+/* ===== Left title (big) ===== */
+#leftTitle{
   position:fixed;
-  top:18px; right:18px;
+  top:18px; left:18px;
   z-index:40;
-  font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
-  color:var(--hudTx);
-  background:var(--hudBg);
-  border:1px solid var(--hudBd);
-  padding:10px 12px;
-  border-radius:12px;
-  backdrop-filter: blur(8px);
-  user-select:none;
-}
-#hud .hash{font-weight:800; letter-spacing:.25px}
-#hud .hint{margin-top:6px; font-size:11.5px; opacity:.74}
-
-/* ===== Mini-map ===== */
-#minimap{
-  position:fixed;
-  right:20px;
-  top:92px;
-  z-index:40;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  padding:12px 10px;
+  padding:12px 14px;
   border-radius:14px;
   background:var(--hudBg);
   border:1px solid var(--hudBd);
   backdrop-filter: blur(8px);
+  max-width:min(56vw, 740px);
+  user-select:none;
+}
+#leftTitle .t{
+  font-size:clamp(18px, 2.2vw, 26px);
+  line-height:1.05;
+  text-shadow:0 10px 28px rgba(0,0,0,.9);
+}
+#leftTitle .a{
+  margin-top:6px;
+  font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
+  color:var(--hudTx2);
+}
+
+/* per stile (titolo in alto a sinistra) */
+body[data-active-style="thriller"] #leftTitle .t{ font-family:"Rubik Dirt", cursive; letter-spacing:.25px; }
+body[data-active-style="normale"]  #leftTitle .t{ font-family:"Roboto", system-ui, sans-serif; font-weight:800; }
+body[data-active-style="amore"]    #leftTitle .t{ font-family:"Playfair Display", serif; font-weight:800; }
+
+/* ===== Right legend ===== */
+#hud{
+  position:fixed;
+  top:18px; right:18px;
+  z-index:40;
+  font: 12.5px/1.25 "Roboto", system-ui, sans-serif;
+  color:var(--hudTx);
+  background:var(--hudBg);
+  border:1px solid var(--hudBd);
+  padding:12px 14px;
+  border-radius:14px;
+  backdrop-filter: blur(8px);
+  user-select:none;
+  max-width: min(40vw, 520px);
+}
+#hud .hash{font-weight:900; letter-spacing:.25px}
+#hud .hint{margin-top:8px; font-size:12px; opacity:.82}
+
+/* ===== Mini-map with always-visible titles ===== */
+#minimap{
+  position:fixed;
+  right:18px;
+  top:130px;
+  z-index:40;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:12px 12px;
+  border-radius:14px;
+  background:var(--hudBg);
+  border:1px solid var(--hudBd);
+  backdrop-filter: blur(8px);
+  max-width:min(40vw, 520px);
+}
+.mm-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  user-select:none;
 }
 .mm-dot{
   width:10px; height:10px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.22);
-  background:rgba(255,255,255,.12);
-  cursor:pointer;
-  position:relative;
+  background:rgba(255,255,255,.14);
+  flex:0 0 auto;
 }
-.mm-dot:hover{background:rgba(255,255,255,.22)}
-.mm-dot.active{
-  background:rgba(255,255,255,.9);
-  border-color:rgba(255,255,255,.9);
+.mm-item:hover .mm-dot{background:rgba(255,255,255,.24)}
+.mm-item.active .mm-dot{
+  background:rgba(255,255,255,.95);
+  border-color:rgba(255,255,255,.95);
 }
-.mm-dot.playing::after{
-  content:"";
-  position:absolute;
-  inset:-6px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.35);
-  opacity:.65;
+.mm-item.playing .mm-dot{
+  box-shadow:0 0 0 6px rgba(255,255,255,.10);
 }
 .mm-label{
-  position:absolute;
-  right:18px;
-  top:50%;
-  transform:translateY(-50%);
+  font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
+  color:rgba(255,255,255,.86);
   white-space:nowrap;
-  font: 12px/1.2 "Roboto", system-ui, sans-serif;
-  color:rgba(255,255,255,.85);
-  background:rgba(0,0,0,.40);
-  border:1px solid rgba(255,255,255,.10);
-  padding:6px 8px;
-  border-radius:10px;
-  opacity:0;
-  pointer-events:none;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
-.mm-dot:hover .mm-label{opacity:1}
 
 /* ===== Karaoke ===== */
 #karaoke{
@@ -174,7 +238,7 @@ body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; }
 body[data-active-style="normale"]  #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
 body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
 
-/* Transitions (set) */
+/* Transitions */
 .t-fade-in   { transform:none; filter:none; }
 .t-pop       { transform:scale(1.08); filter:none; }
 .t-slide-up  { transform:translateY(40px); filter:none; }
@@ -189,7 +253,6 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 
 /* ===== Player ===== */
 #audioA,#audioB{display:none}
-
 #playerTitle{
   position:fixed;
   bottom:56px;
@@ -236,20 +299,32 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 @media (prefers-reduced-motion: reduce){
   .scene.breathing{ animation:none; }
   #line{ transition:none; }
+  #fx{ display:none; }
 }
 </style>
 </head>
 
 <body data-active-style="normale">
 
+<div id="leftTitle">
+  <div class="t" id="leftT">—</div>
+  <div class="a" id="leftA">—</div>
+</div>
+
 <div id="hud">
   <div class="hash" id="hash">#</div>
-  <div class="hint">Scroll = scene • Shift+Scroll = scrub • Play = qui</div>
+  <div class="hint">
+    Scorri con la rotellina avanti e indietro per vedere le tracce.<br>
+    Premi <b>Play</b> per far partire la canzone scelta.<br>
+    Tieni premuto <b>Shift</b> e scorri per “scrubbare” il tempo della canzone.
+  </div>
 </div>
 
 <div id="minimap" aria-label="Album map"></div>
 
 <div id="stage"><div id="world"></div></div>
+<canvas id="fx"></canvas>
+
 <div id="karaoke"><div id="line"></div></div>
 
 <audio id="audioA" preload="metadata" crossorigin="anonymous"></audio>
@@ -306,7 +381,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 function bpmToBreath(bpm, styleKey){
   const s = STYLE[styleKey] || STYLE.normale;
-  let dur = 120 / Math.max(40, bpm);   // più bpm = più veloce
+  let dur = 120 / Math.max(40, bpm);
   dur = clamp(dur, 0.70, 2.1);
   let amp = 1.06 + (bpm - 70) * 0.0015;
   amp = clamp(amp, 1.06, 1.22) * s.breatheAmp;
@@ -317,76 +392,91 @@ function pickTransition(styleKey){
   const set=(STYLE[styleKey]||STYLE.normale).transitions;
   return set[(Math.random()*set.length)|0];
 }
-function toHashTag(title){
-  const clean=(title||"")
+
+function slugify(title){
+  return (title||"")
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-zA-Z0-9]+/g," ")
-    .trim()
-    .split(/\s+/)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,"-")
+    .replace(/(^-|-$)/g,"");
+}
+function toHashTag(title){
+  const s = slugify(title)
+    .split("-")
+    .filter(Boolean)
     .map(w=>w.charAt(0).toUpperCase()+w.slice(1))
     .join("");
-  return "#"+(clean||"Track");
+  return "#"+(s||"Track");
 }
 
 /* =========================
-   SCENES + DEPTH (più spazio)
+   SCENES + DEPTH
    ========================= */
-const world=document.getElementById("world");
-const SCENE_DEPTH = 2100; // più profondità rispetto a prima
+const stage = document.getElementById("stage");
+const world = document.getElementById("world");
+const SCENE_DEPTH = 2100;
 const scenes = tracks.map((t,i)=>{
   const el=document.createElement("div");
   el.className="scene";
   el.dataset.style=t.style;
-  el.style.backgroundImage=`url("${t.cover}")`;
+  el.style.setProperty("--cover-url", `url("${t.cover}")`);
   el.innerHTML=`
+    <div class="reflect"></div>
+    <div class="cover"></div>
     <div class="meta">
       <div class="title">${t.title}</div>
       <div class="artist">${t.artist}</div>
     </div>`;
   world.appendChild(el);
-  return { el, z:-i*SCENE_DEPTH, track:t, index:i };
+  return { el, z:-i*SCENE_DEPTH, track:t, index:i, slug: slugify(t.title) };
 });
 const MAX_Z = SCENE_DEPTH * (tracks.length-1);
 
 /* =========================
-   MINI-MAP
-   ========================= */
-const minimap=document.getElementById("minimap");
-const dots = scenes.map((s,i)=>{
-  const d=document.createElement("div");
-  d.className="mm-dot";
-  d.title=s.track.title;
-  d.innerHTML=`<div class="mm-label">${s.track.title}</div>`;
-  d.addEventListener("click", ()=> {
-    targetZ = i*SCENE_DEPTH;
-    targetZ = clamp(targetZ, 0, MAX_Z);
-    snapArmed = false; // click è già uno snap
-  });
-  minimap.appendChild(d);
-  return d;
-});
-
-/* =========================
-   HUD + playerTitle
+   HUD
    ========================= */
 const hashEl=document.getElementById("hash");
 const playerTitle=document.getElementById("playerTitle");
+const leftT=document.getElementById("leftT");
+const leftA=document.getElementById("leftA");
+
+function setActiveStyle(styleKey){ document.body.dataset.activeStyle = styleKey || "normale"; }
+
 function updateHUD(){
   const t=scenes[activeIndex].track;
-  hashEl.textContent=toHashTag(t.title);
-  playerTitle.textContent=`${t.artist} — ${t.title}`;
+  hashEl.textContent = toHashTag(t.title);
+  playerTitle.textContent = `${t.artist} — ${t.title}`;
+  leftT.textContent = t.title;
+  leftA.textContent = `${t.artist} • ${t.bpm} BPM • ${t.style}`;
 }
 
 /* =========================
-   CAMERA: INERZIA + SNAP MAGNETICO (1)
+   MINIMAP (titles always visible)
+   ========================= */
+const minimap=document.getElementById("minimap");
+const mmItems = scenes.map((s,i)=>{
+  const row=document.createElement("div");
+  row.className="mm-item";
+  row.innerHTML = `<div class="mm-dot"></div><div class="mm-label">${s.track.title}</div>`;
+  row.addEventListener("click", ()=>{
+    targetZ = clamp(i*SCENE_DEPTH, 0, MAX_Z);
+    snapArmed = false; // già snap
+  });
+  minimap.appendChild(row);
+  return row;
+});
+
+/* =========================
+   CAMERA: inertia + snap + THUMP
    ========================= */
 let cameraZ=0;
 let targetZ=0;
 let activeIndex=0;
 
-const SPEED = 0.95;
+const SPEED=0.95;
 let snapTimer=null;
 let snapArmed=false;
+let lastSnappedIndex=null;
 
 function computeActiveIndex(zVal){
   let bestI=0, bestD=Infinity;
@@ -396,6 +486,14 @@ function computeActiveIndex(zVal){
     if(d<bestD){ bestD=d; bestI=i; }
   }
   return bestI;
+}
+
+function triggerThump(){
+  world.classList.remove("thump");
+  // reflow
+  void world.offsetWidth;
+  world.classList.add("thump");
+  setTimeout(()=>world.classList.remove("thump"), 260);
 }
 
 function armSnap(){
@@ -409,18 +507,36 @@ function armSnap(){
 }
 
 /* =========================
-   AUDIO ENGINE: TRUE CROSSFADE (3)
-   due audio elements + WebAudio gains
+   DEEP LINKING (History API)
+   - on snap settle -> update hash
+   - on load -> jump to hash
+   ========================= */
+function setHashForIndex(i){
+  const slug = scenes[i]?.slug || "";
+  if(!slug) return;
+  history.replaceState(null, "", `#${slug}`);
+}
+
+function readHashIndex(){
+  const h = (location.hash || "").replace("#","").trim().toLowerCase();
+  if(!h) return null;
+  const idx = scenes.findIndex(s => s.slug === h);
+  return idx >= 0 ? idx : null;
+}
+
+/* =========================
+   AUDIO ENGINE (crossfade) + lyrics slice
    ========================= */
 const audioA=document.getElementById("audioA");
 const audioB=document.getElementById("audioB");
-const audios=[audioA, audioB];
+const audios=[audioA,audioB];
 
 let audioCtx=null, srcA=null, srcB=null, gA=null, gB=null;
-let currentPlayer=0;      // quale audio sta suonando ora (0/1)
-let playingIndex=null;    // quale traccia sta suonando
-let vttSession=0;         // guard per evitare flash old events
-let currentTrackEl=null;  // track element attuale (sul player attivo)
+let currentPlayer=0;
+let playingIndex=null;
+
+let vttSession=0;
+let currentTrackEl=null;
 
 const playBtn=document.getElementById("play");
 const line=document.getElementById("line");
@@ -428,8 +544,6 @@ const line=document.getElementById("line");
 function ensureAudioGraph(){
   if(audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  // create sources once (per element) — Safari: deve essere dopo gesto utente
   srcA = audioCtx.createMediaElementSource(audioA);
   srcB = audioCtx.createMediaElementSource(audioB);
   gA = audioCtx.createGain();
@@ -439,10 +553,10 @@ function ensureAudioGraph(){
   srcA.connect(gA).connect(audioCtx.destination);
   srcB.connect(gB).connect(audioCtx.destination);
 }
-
-function setActiveStyle(styleKey){
-  document.body.dataset.activeStyle = styleKey || "normale";
-}
+function getCurrentAudio(){ return audios[currentPlayer]; }
+function getOtherAudio(){ return audios[1-currentPlayer]; }
+function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
+function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
 
 function clearKaraoke(){
   vttSession++;
@@ -450,15 +564,14 @@ function clearKaraoke(){
   line.textContent="";
   if(currentTrackEl){
     try{ currentTrackEl.remove(); }catch(e){}
-    currentTrackEl = null;
+    currentTrackEl=null;
   }
 }
 
-function bindKaraokeTo(playerEl, trackObj, boundIndex){
-  clearKaraoke(); // increment session + remove old track
+function bindKaraokeTo(playerEl, trackObj){
+  clearKaraoke();
   const mySession = vttSession;
 
-  // create new <track>
   const tr=document.createElement("track");
   tr.kind="subtitles";
   tr.srclang="it";
@@ -475,12 +588,9 @@ function bindKaraokeTo(playerEl, trackObj, boundIndex){
     let lastCue=null;
 
     const refresh=()=>{
-      // guard: evita flash di eventi vecchi
       if(mySession !== vttSession) return;
 
-      // regola richiesta: testo SOLO se
-      // - sto guardando lo spicchio del brano in play
-      // - quel brano sta suonando (non in pausa)
+      // testo SOLO se sono nello "spicchio" della traccia in play
       if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
       if(getCurrentAudio().paused) { line.style.opacity=0; return; }
 
@@ -512,27 +622,26 @@ function bindKaraokeTo(playerEl, trackObj, boundIndex){
   });
 }
 
-function getCurrentAudio(){ return audios[currentPlayer]; }
-function getOtherAudio(){ return audios[1-currentPlayer]; }
-function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
-function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
-
 function updatePlayingUI(){
-  playBtn.textContent = (playingIndex !== null && !getCurrentAudio().paused) ? "pause" : "play";
+  const a = getCurrentAudio();
+  playBtn.textContent = (playingIndex !== null && !a.paused) ? "pause" : "play";
 
   scenes.forEach((s,i)=>{
-    s.el.classList.toggle("is-playing", (playingIndex===i && playingIndex!==null && !getCurrentAudio().paused));
+    s.el.classList.toggle("is-playing", (playingIndex===i && playingIndex!==null && !a.paused));
   });
-  dots.forEach((d,i)=>{
-    d.classList.toggle("active", i===activeIndex);
-    d.classList.toggle("playing", i===playingIndex && playingIndex!==null && !getCurrentAudio().paused);
+
+  mmItems.forEach((row,i)=>{
+    row.classList.toggle("active", i===activeIndex);
+    row.classList.toggle("playing", (i===playingIndex && playingIndex!==null && !a.paused));
   });
+
   setBreathing();
 }
 
 function setBreathing(){
+  const a = getCurrentAudio();
   scenes.forEach((s,i)=>{
-    const should = (playingIndex===i) && (activeIndex===i) && (playingIndex!==null) && !getCurrentAudio().paused;
+    const should = (playingIndex===i) && (activeIndex===i) && (playingIndex!==null) && !a.paused;
     s.el.classList.toggle("breathing", should);
     if(should){
       const {dur, amp} = bpmToBreath(s.track.bpm, s.track.style);
@@ -549,25 +658,23 @@ async function playOrToggle(){
   const wantIndex = activeIndex;
   const want = scenes[wantIndex].track;
 
-  // se niente sta suonando: carica e play sul current player
   if(playingIndex === null){
     playingIndex = wantIndex;
     const a = getCurrentAudio();
     a.src = want.audio;
     a.load();
     setActiveStyle(want.style);
-    bindKaraokeTo(a, want, wantIndex);
+    bindKaraokeTo(a, want);
     await a.play();
     updatePlayingUI();
     return;
   }
 
-  // se sto sulla stessa traccia: toggle play/pause
   if(playingIndex === wantIndex){
     const a = getCurrentAudio();
     if(a.paused){
       await a.play();
-    } else {
+    }else{
       a.pause();
       line.style.opacity=0;
     }
@@ -575,13 +682,12 @@ async function playOrToggle(){
     return;
   }
 
-  // altrimenti: CROSSFADE su altra traccia
   await crossfadeTo(wantIndex);
 }
 
 async function crossfadeTo(nextIndex){
-  const FADE = 1.15; // sec (puoi alzarlo/abbassarlo)
-  const prevIndex = playingIndex;
+  const FADE = 1.15;
+
   const prevAudio = getCurrentAudio();
   const nextAudio = getOtherAudio();
   const prevGain = getCurrentGain();
@@ -589,7 +695,6 @@ async function crossfadeTo(nextIndex){
 
   const next = scenes[nextIndex].track;
 
-  // prepara nuovo audio
   playingIndex = nextIndex;
   setActiveStyle(next.style);
 
@@ -598,22 +703,17 @@ async function crossfadeTo(nextIndex){
   nextAudio.src = next.audio;
   nextAudio.load();
 
-  // karaoke si aggancia al player che diventerà attivo
-  bindKaraokeTo(nextAudio, next, nextIndex);
+  bindKaraokeTo(nextAudio, next);
 
-  // avvia nuovo a volume 0
   nextGain.gain.cancelScheduledValues(audioCtx.currentTime);
   prevGain.gain.cancelScheduledValues(audioCtx.currentTime);
   nextGain.gain.setValueAtTime(0, audioCtx.currentTime);
-  prevGain.gain.setValueAtTime(prevGain.gain.value, audioCtx.currentTime);
 
   await nextAudio.play();
 
-  // fade
   nextGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + FADE);
   prevGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
 
-  // dopo fade: spegni vecchio e switch player
   setTimeout(()=>{
     try{
       prevAudio.pause();
@@ -629,56 +729,43 @@ async function crossfadeTo(nextIndex){
 /* controls */
 document.getElementById("play").addEventListener("click", playOrToggle);
 document.getElementById("back").addEventListener("click", ()=>{
-  const a = (playingIndex===null) ? getCurrentAudio() : getCurrentAudio();
+  const a = getCurrentAudio();
   a.currentTime = Math.max(0, (a.currentTime||0) - 10);
 });
 document.getElementById("forward").addEventListener("click", ()=>{
-  const a = (playingIndex===null) ? getCurrentAudio() : getCurrentAudio();
+  const a = getCurrentAudio();
   a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
 });
 
-/* hide lyrics if you're not on slice */
-function enforceSliceVisibility(){
-  if(playingIndex === null){ line.style.opacity=0; return; }
-  if(activeIndex !== playingIndex){ line.style.opacity=0; return; }
-  if(getCurrentAudio().paused){ line.style.opacity=0; return; }
-}
-
 /* =========================
-   SHIFT+SCROLL SCRUB (7)
+   Shift+Scroll scrub
    ========================= */
 function scrub(deltaY){
   if(playingIndex === null) return;
   const a = getCurrentAudio();
   if(!a || isNaN(a.currentTime)) return;
-  // scrubbing sensibile ma controllabile
-  // 1 "notch" tipico ~100 => 2.0s
   const seconds = (deltaY / 100) * 2.0;
   a.currentTime = clamp(a.currentTime + seconds, 0, (a.duration||a.currentTime+10));
-  enforceSliceVisibility();
+  if(activeIndex !== playingIndex) line.style.opacity=0;
 }
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-
-  // Shift+Scroll = scrub tempo della traccia in play
   if(e.shiftKey){
     scrub(e.deltaY);
     return;
   }
-
-  // scroll normale = navigazione scene
-  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z);
+  targetZ = clamp(targetZ + e.deltaY * 0.95, 0, MAX_Z);
   armSnap();
 },{passive:false});
 
 /* =========================
-   RENDER LOOP (camera easing + snap)
+   SCENE RENDER LOOP + snap settle hook
    ========================= */
 function updateScenes(){
   activeIndex = computeActiveIndex(cameraZ);
 
-  // transforms
+  // scene transforms
   for(const s of scenes){
     const rz = s.z + cameraZ;
     const dist = Math.abs(rz);
@@ -695,27 +782,236 @@ function updateScenes(){
     s.el.style.opacity = opacity.toFixed(3);
   }
 
+  // slice lyrics rule
+  if(playingIndex === null || activeIndex !== playingIndex || getCurrentAudio().paused){
+    line.style.opacity = 0;
+  }
+
   updateHUD();
   updatePlayingUI();
-  enforceSliceVisibility();
+
+  // FX per stile basato su scena attiva
+  fxSetMode(scenes[activeIndex].track.style);
 }
 
+/* snap settle detection */
+let lastSettled = null;
 function tick(){
-  // easing
   const diff = (targetZ - cameraZ);
-  cameraZ += diff * 0.12; // feel
+  cameraZ += diff * 0.12;
   if(Math.abs(diff) < 0.35) cameraZ = targetZ;
 
   updateScenes();
+
+  // quando "si ferma" nello snap, applica thump + deep link (una sola volta)
+  const nowIndex = Math.round(cameraZ / SCENE_DEPTH);
+  const settled = (Math.abs(targetZ-cameraZ) < 0.6) && (Math.abs((targetZ/SCENE_DEPTH)-Math.round(targetZ/SCENE_DEPTH)) < 0.001);
+
+  if(settled){
+    if(lastSettled !== nowIndex){
+      lastSettled = nowIndex;
+      triggerThump();
+      setHashForIndex(nowIndex);
+    }
+  }
+
   requestAnimationFrame(tick);
+}
+
+/* deep link on load */
+function jumpToHashIfAny(){
+  const idx = readHashIndex();
+  if(idx === null) return;
+  targetZ = clamp(idx*SCENE_DEPTH, 0, MAX_Z);
+  cameraZ = targetZ; // jump immediato (pulito)
+  lastSettled = idx;
+}
+
+function setHashForIndex(i){
+  const slug = scenes[i]?.slug || "";
+  if(!slug) return;
+  history.replaceState(null, "", `#${slug}`);
+}
+function readHashIndex(){
+  const h = (location.hash || "").replace("#","").trim().toLowerCase();
+  if(!h) return null;
+  const idx = scenes.findIndex(s => s.slug === h);
+  return idx >= 0 ? idx : null;
+}
+
+/* thump */
+function triggerThump(){
+  world.classList.remove("thump");
+  void world.offsetWidth;
+  world.classList.add("thump");
+  setTimeout(()=>world.classList.remove("thump"), 260);
 }
 
 /* init */
 targetZ = 0;
 cameraZ = 0;
+jumpToHashIfAny();
 updateHUD();
 updateScenes();
 requestAnimationFrame(tick);
+
+/* =========================
+   FX CANVAS — per stile
+   thriller: rain + static
+   normale: dust
+   amore: fireflies
+   ========================= */
+const fx = document.getElementById("fx");
+const fxc = fx.getContext("2d", { alpha:true });
+
+let fxW=0, fxH=0;
+let fxMode="normale";
+let fxModeWanted="normale";
+
+function resizeFx(){
+  fxW = fx.width = Math.floor(window.innerWidth * devicePixelRatio);
+  fxH = fx.height = Math.floor(window.innerHeight * devicePixelRatio);
+  fxc.setTransform(1,0,0,1,0,0);
+}
+window.addEventListener("resize", resizeFx);
+resizeFx();
+
+function fxSetMode(m){
+  fxModeWanted = m || "normale";
+}
+
+const dust = Array.from({length:140}, ()=>mkParticle("dust"));
+const fire = Array.from({length:110}, ()=>mkParticle("fire"));
+const rain = Array.from({length:160}, ()=>mkParticle("rain"));
+
+function mkParticle(kind){
+  const r = Math.random();
+  if(kind==="dust"){
+    return {
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random()*0.10 + 0.02) * (Math.random()<.5?-1:1),
+      vy: -(Math.random()*0.06 + 0.01),
+      s: 0.6 + Math.random()*1.8,
+      a: 0.06 + Math.random()*0.10
+    };
+  }
+  if(kind==="fire"){ // lucciole
+    return {
+      x: Math.random(), y: 1 + Math.random()*0.4,
+      vx: (Math.random()*0.12 + 0.02) * (Math.random()<.5?-1:1),
+      vy: -(Math.random()*0.18 + 0.06),
+      s: 1.2 + Math.random()*2.6,
+      a: 0.10 + Math.random()*0.14,
+      w: 0.6 + Math.random()*1.6,
+      ph: Math.random()*Math.PI*2
+    };
+  }
+  // rain
+  return {
+    x: Math.random(), y: Math.random(),
+    vx: 0.02 + Math.random()*0.03,
+    vy: 0.70 + Math.random()*1.10,
+    len: 0.018 + Math.random()*0.04,
+    a: 0.05 + Math.random()*0.10
+  };
+}
+
+function drawNoiseStatic(){
+  // static leggero: pochi sample per performance
+  const step = Math.max(6, Math.floor(10 * devicePixelRatio));
+  const imgW = fxW, imgH = fxH;
+  fxc.save();
+  fxc.globalAlpha = 0.12;
+  for(let y=0; y<imgH; y+=step){
+    for(let x=0; x<imgW; x+=step){
+      const v = (Math.random()*255)|0;
+      fxc.fillStyle = `rgba(${v},${v},${v},0.22)`;
+      fxc.fillRect(x,y,step,step);
+    }
+  }
+  fxc.restore();
+}
+
+function fxLoop(){
+  // smooth mode switch
+  if(fxMode !== fxModeWanted) fxMode = fxModeWanted;
+
+  fxc.clearRect(0,0,fxW,fxH);
+
+  if(fxMode === "thriller"){
+    // rain
+    fxc.save();
+    fxc.globalCompositeOperation = "screen";
+    for(const p of rain){
+      p.y += p.vy * 0.0045;
+      p.x += p.vx * 0.0022;
+      if(p.y > 1.05){ p.y = -0.05; p.x = Math.random(); }
+      if(p.x > 1.05) p.x = -0.05;
+      const x = p.x * fxW;
+      const y = p.y * fxH;
+      const x2 = x + p.vx * fxW * 0.02;
+      const y2 = y + p.vy * fxH * 0.03;
+      fxc.strokeStyle = `rgba(220,240,255,${p.a})`;
+      fxc.lineWidth = Math.max(1, 1.2*devicePixelRatio);
+      fxc.beginPath();
+      fxc.moveTo(x,y);
+      fxc.lineTo(x2,y2);
+      fxc.stroke();
+    }
+    fxc.restore();
+
+    // static tv
+    drawNoiseStatic();
+  }
+  else if(fxMode === "amore"){
+    // lucciole
+    fxc.save();
+    fxc.globalCompositeOperation = "screen";
+    for(const p of fire){
+      p.ph += 0.02 * p.w;
+      p.x += p.vx * 0.0012 + Math.sin(p.ph)*0.0006;
+      p.y += p.vy * 0.0012;
+      if(p.y < -0.25){ p.y = 1.15; p.x = Math.random(); }
+      if(p.x < -0.1) p.x = 1.1;
+      if(p.x > 1.1) p.x = -0.1;
+
+      const x = p.x * fxW;
+      const y = p.y * fxH;
+      const r = (p.s * devicePixelRatio) * (0.8 + 0.4*Math.sin(p.ph));
+      const grd = fxc.createRadialGradient(x,y,0,x,y,r*6);
+      grd.addColorStop(0, `rgba(255,230,160,${p.a})`);
+      grd.addColorStop(1, `rgba(255,230,160,0)`);
+      fxc.fillStyle = grd;
+      fxc.beginPath();
+      fxc.arc(x,y,r*6,0,Math.PI*2);
+      fxc.fill();
+    }
+    fxc.restore();
+  }
+  else {
+    // normale: dust
+    fxc.save();
+    fxc.globalCompositeOperation = "screen";
+    for(const p of dust){
+      p.x += p.vx * 0.0011;
+      p.y += p.vy * 0.0010;
+      if(p.y < -0.1){ p.y = 1.1; p.x = Math.random(); }
+      if(p.x < -0.1) p.x = 1.1;
+      if(p.x > 1.1) p.x = -0.1;
+
+      const x = p.x * fxW;
+      const y = p.y * fxH;
+      fxc.fillStyle = `rgba(220,230,255,${p.a})`;
+      fxc.beginPath();
+      fxc.arc(x,y,Math.max(1, p.s*devicePixelRatio),0,Math.PI*2);
+      fxc.fill();
+    }
+    fxc.restore();
+  }
+
+  requestAnimationFrame(fxLoop);
+}
+fxLoop();
 </script>
 
 </body>
