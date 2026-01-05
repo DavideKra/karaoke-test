@@ -3,41 +3,42 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Davide*Kra — Album 3D V7 (Interlude Added)</title>
+<title>Davide*Kra — Album 3D V8 (Fixed)</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
 <style>
+/* Reset e Base */
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
 :root{
   --hudTx: rgba(255,255,255,.9);
 }
 
-/* ===== CANVAS BG (Motore Fisico) ===== */
+/* ===== CANVAS BG (Sfondo animato) ===== */
 #bg-canvas {
   position: fixed; inset: 0;
   z-index: 1; 
   pointer-events: none;
 }
 
-/* ===== FX LAYER (Colori e Atmosfera) ===== */
+/* ===== FX LAYER (Effetti colore sovrapposti) ===== */
 #fx-layer {
   position: fixed; inset: 0;
-  z-index: 20; 
+  z-index: 20; /* Sopra le scene, sotto l'interfaccia */
   pointer-events: none;
   transition: all 0.5s ease;
   mix-blend-mode: overlay;
 }
 
-/* THRILLER: Scuro + Contrasto */
+/* FX: THRILLER (Cupo + Contrasto) */
 body[data-active-style="thriller"] #fx-layer {
   background: radial-gradient(circle at center, transparent 30%, #000 120%);
   box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
   filter: contrast(1.2) brightness(0.9) sepia(0.2);
 }
 
-/* AMORE: Glow Rosa Intenso */
+/* FX: AMORE (Glow Rosa Intenso) */
 body[data-active-style="amore"] #fx-layer {
   background: radial-gradient(circle, rgba(255,100,150,0.2) 0%, rgba(50,0,20,0.6) 90%);
   filter: blur(0.5px) brightness(1.2) contrast(1.1);
@@ -45,13 +46,13 @@ body[data-active-style="amore"] #fx-layer {
 }
 @keyframes lovePulse { 0% {opacity:0.8} 50% {opacity:1} 100% {opacity:0.8} }
 
-/* NORMALE: Bluastro Tecnico */
+/* FX: NORMALE (Bluastro Tecnico) */
 body[data-active-style="normale"] #fx-layer {
   background: radial-gradient(circle, rgba(200,200,255,0.05) 0%, transparent 80%);
   opacity: 0.5;
 }
 
-/* ===== STAGE ===== */
+/* ===== STAGE 3D ===== */
 #stage{
   position:fixed; inset:0;
   perspective:1800px;
@@ -60,11 +61,12 @@ body[data-active-style="normale"] #fx-layer {
 }
 #world{position:absolute; inset:0; transform-style:preserve-3d;}
 
-/* ===== SCENE ===== */
+/* ===== SCENE (Le carte degli album) ===== */
 .scene{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
   transform-style:preserve-3d;
+  background-color: #1a1a1a; /* Fallback color se immagine manca */
   background-repeat:no-repeat;
   background-position:center center;
   background-size:contain;
@@ -77,6 +79,7 @@ body[data-active-style="normale"] #fx-layer {
   pointer-events:none;
   z-index: 1;
 }
+/* Riflesso pavimento */
 .scene::after {
   content: "";
   position: absolute;
@@ -96,7 +99,7 @@ body[data-active-style="normale"] #fx-layer {
 }
 .scene > *{position:relative; z-index:2}
 
-/* THUMP EFFECT */
+/* Effetto colpo (Thump) */
 @keyframes thumpAnim {
   0% { transform: scale(1); }
   50% { transform: scale(1.02); filter: brightness(1.1); }
@@ -131,7 +134,7 @@ body[data-active-style="normale"] #fx-layer {
   filter:blur(4px);
 }
 
-/* Styles Font */
+/* Font specifici per stile */
 .scene[data-style="thriller"] .meta .title{ font-family:"Rubik Dirt", cursive; letter-spacing:.25px; color: #ffcece; }
 .scene[data-style="normale"] .meta .title{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing:-1px; }
 .scene[data-style="amore"] .meta .title{ font-family:"Playfair Display", serif; font-weight:700; font-style: italic; color: #ffe0f0; }
@@ -269,7 +272,7 @@ body[data-active-style="amore"]    #line{ font-family:"Playfair Display", serif;
 
 <script>
 /* =========================
-   TRACKS
+   TRACKS (Configurazione)
    ========================= */
 const tracks = [
   {
@@ -337,7 +340,7 @@ function pickTransition(styleKey){
 }
 
 /* =========================
-   CANVAS PARTICLES SYSTEM V6
+   CANVAS SYSTEM (Particelle)
    ========================= */
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
@@ -368,34 +371,32 @@ class Particle {
             this.alpha = 0.2 + Math.random() * 0.4;
 
         } else if (style === 'amore') {
-            // AMORE: Mix di Petali (70%) e Lucciole (30%)
+            // AMORE
             this.isPetal = Math.random() > 0.3; 
             
             if(this.isPetal){
-                this.vx = (Math.random() - 0.5) * 2; // Dondola
-                this.vy = 1 + Math.random() * 2;     // Cade
-                this.size = 6 + Math.random() * 8;   // Grandi
+                this.vx = (Math.random() - 0.5) * 2; 
+                this.vy = 1 + Math.random() * 2;    
+                this.size = 6 + Math.random() * 8;   
                 this.angle = Math.random() * Math.PI * 2;
                 this.spin = (Math.random() - 0.5) * 0.05;
                 this.y = Math.random() * -ch;
-                // Colori Petali: Rosso, Rosa scuro, Rosa chiaro
                 const tones = ["220, 20, 60", "255, 105, 180", "255, 192, 203"];
                 this.color = tones[Math.floor(Math.random()*tones.length)];
                 this.alpha = 0.6 + Math.random() * 0.4;
             } else {
-                // Lucciole
                 this.vx = (Math.random() - 0.5) * 0.8;
                 this.vy = (Math.random() - 0.5) * 0.8;
                 this.size = 2 + Math.random() * 3;
-                this.alpha = 0; // Parte invisibile e pulsa
+                this.alpha = 0; 
                 this.pulseSpeed = 0.02 + Math.random()*0.03;
             }
 
         } else {
-            // NORMALE: Geometria (Quadrati, Triangoli, Cerchi)
+            // NORMALE (GEOMETRIA)
             this.vx = (Math.random() - 0.5) * 0.6;
             this.vy = (Math.random() - 0.5) * 0.6;
-            this.size = 10 + Math.random() * 20; // Grandi forme
+            this.size = 10 + Math.random() * 20; 
             this.angle = Math.random() * Math.PI * 2;
             this.spin = (Math.random() - 0.5) * 0.02;
             this.alpha = 0.3 + Math.random() * 0.4;
@@ -414,21 +415,18 @@ class Particle {
         } else if (this.style === 'amore') {
             if(this.isPetal){
                 this.y += this.vy;
-                this.x += Math.sin(this.life * 0.02 + this.angle) * 1.5; // Dondolio evidente
+                this.x += Math.sin(this.life * 0.02 + this.angle) * 1.5; 
                 this.angle += this.spin;
                 if (this.y > ch) { this.y = -20; this.x = Math.random() * cw; }
             } else {
-                // Lucciole
                 this.x += this.vx; this.y += this.vy;
-                // Loop bordi
                 if (this.x < 0) this.x = cw; if (this.x > cw) this.x = 0;
                 if (this.y < 0) this.y = ch; if (this.y > ch) this.y = 0;
-                // Pulsazione
                 this.alpha = 0.5 + Math.sin(this.life * this.pulseSpeed) * 0.5;
             }
 
         } else {
-            // Geometria
+            // Geometria update
             this.x += this.vx; this.y += this.vy;
             this.angle += this.spin;
             if (this.x < -50) this.x = cw+50; if (this.x > cw+50) this.x = -50;
@@ -451,13 +449,11 @@ class Particle {
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
                 ctx.beginPath();
-                // Disegna ovale (petalo)
                 ctx.ellipse(0, 0, this.size/2, this.size, 0, 0, Math.PI*2);
                 ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
                 ctx.fill();
                 ctx.restore();
             } else {
-                // Lucciola (Glow)
                 ctx.beginPath();
                 ctx.fillStyle = `rgba(255, 215, 0, ${this.alpha})`;
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
@@ -468,7 +464,7 @@ class Particle {
             }
 
         } else {
-            // Geometria
+            // Geometria draw
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.angle);
@@ -492,20 +488,18 @@ class Particle {
     }
 }
 
+// Inizializzazione sicura
 let particles = [];
 for(let i=0; i<100; i++) particles.push(new Particle('normale'));
 
 function updateCanvasEffect(newStyle){ 
-    // Regola numero particelle in base allo stile
-    let targetCount = 120; // Default
-    if(newStyle === 'thriller') targetCount = 350; // Tanta pioggia
-    if(newStyle === 'amore') targetCount = 100;    // Petali + lucciole equilibrati
-    if(newStyle === 'normale') targetCount = 60;   // Meno forme ma grandi
+    let targetCount = 120; 
+    if(newStyle === 'thriller') targetCount = 350; 
+    if(newStyle === 'amore') targetCount = 100;    
+    if(newStyle === 'normale') targetCount = 60;   
 
-    // Aggiungi o rimuovi array
     while(particles.length < targetCount) particles.push(new Particle(newStyle));
     while(particles.length > targetCount) particles.pop();
-
     particles.forEach(p => p.reset(newStyle)); 
 }
 
@@ -517,7 +511,7 @@ function loopCanvas(){
 loopCanvas();
 
 /* =========================
-   SCENES & WORLD
+   SCENE & WORLD
    ========================= */
 const world=document.getElementById("world");
 const SCENE_DEPTH = 2200; 
@@ -590,14 +584,20 @@ let snapArmed=false;
 let hasThumped = false; 
 
 window.onload = () => {
+    // Gestione Hash URL iniziale
     const hash = window.location.hash.slice(1); 
     if(hash){
         const idx = tracks.findIndex(t => t.slug === hash);
         if(idx >= 0){ activeIndex = idx; targetZ = idx * SCENE_DEPTH; cameraZ = targetZ; }
     }
     updateScenes();
-    updateCanvasEffect(tracks[activeIndex].style);
-    setActiveStyle(tracks[activeIndex].style);
+    
+    // Sicurezza: se activeIndex è valido, aggiorna stile, altrimenti fallback
+    if(tracks[activeIndex]){
+        updateCanvasEffect(tracks[activeIndex].style);
+        setActiveStyle(tracks[activeIndex].style);
+    }
+    
     playerTitleBlock.classList.add("visible");
 };
 
@@ -790,9 +790,13 @@ function updateScenes(){
   activeIndex = computeActiveIndex(cameraZ);
 
   if(activeIndex !== lastActiveIndex){
-      const t = scenes[activeIndex].track;
-      setActiveStyle(t.style);
-      updateHUD(); updateURL(); lastActiveIndex = activeIndex;
+      // Controllo di sicurezza se activeIndex è fuori range (non dovrebbe succedere)
+      if(scenes[activeIndex]){
+          const t = scenes[activeIndex].track;
+          setActiveStyle(t.style);
+          updateHUD(); updateURL(); 
+      }
+      lastActiveIndex = activeIndex;
   }
 
   for(const s of scenes){
@@ -802,7 +806,10 @@ function updateScenes(){
 
     s.el.style.setProperty("--rz", `${rz}px`); s.el.style.setProperty("--scale", `${scale}`);
     if(!s.el.classList.contains("breathing")){ s.el.style.transform = `translateZ(${rz}px) scale(${scale})`; }
-    s.el.style.display = (opacity < 0.05) ? 'none' : 'flex'; s.el.style.opacity = opacity.toFixed(3);
+    
+    // Performance: nascondi elementi troppo lontani
+    s.el.style.display = (opacity < 0.05) ? 'none' : 'flex'; 
+    s.el.style.opacity = opacity.toFixed(3);
   }
   updatePlayingUI(); enforceSliceVisibility();
 }
