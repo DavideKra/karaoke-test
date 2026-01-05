@@ -2,59 +2,116 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Sai tenere un segreto? – Karaoke</title>
 
 <style>
+:root{
+  --bg:#05050d;
+  --fg:#eaf2ff;
+  --muted:rgba(234,242,255,.4);
+  --accent:#7c5cff;
+}
+
+*{box-sizing:border-box}
+
 body{
   margin:0;
-  background:#05050d;
-  color:#eaf2ff;
-  font-family:system-ui, sans-serif;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
-  height:100vh;
+  min-height:100vh;
+}
+
+header{
+  padding:40px 20px 20px;
+  text-align:center;
 }
 
 h1{
-  margin-bottom:20px;
+  margin:0;
+  font-size:clamp(28px,5vw,44px);
+  font-weight:800;
+}
+
+.subtitle{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:14px;
+}
+
+/* PLAY BUTTON */
+#playBtn{
+  margin:30px 0 10px;
+  background:linear-gradient(90deg, var(--accent), #00e5ff);
+  color:white;
+  border:none;
+  padding:16px 34px;
+  border-radius:999px;
+  font-size:18px;
   font-weight:700;
+  cursor:pointer;
+  box-shadow:0 0 30px rgba(124,92,255,.6);
 }
 
+#playBtn:hover{
+  transform:scale(1.05);
+}
+
+/* AUDIO (nascosto, controllato via bottone) */
 #audio{
-  width:80%;
-  max-width:600px;
+  display:none;
 }
 
+/* KARAOKE */
 #karaoke{
-  max-width:800px;
-  width:90%;
-  margin-top:30px;
+  width:100%;
+  max-width:900px;
+  padding:40px 20px 80px;
   text-align:center;
 }
 
 .line{
   font-size:22px;
+  line-height:1.4;
   opacity:.35;
-  margin:12px 0;
-  transition:.25s;
+  margin:16px 0;
+  transition:all .25s ease;
 }
 
 .line.active{
   opacity:1;
-  font-size:26px;
+  font-size:28px;
   font-weight:800;
-  text-shadow:0 0 18px rgba(124,92,255,.8);
+  text-shadow:
+    0 0 20px rgba(124,92,255,.8),
+    0 0 40px rgba(124,92,255,.4);
+}
+
+/* footer */
+footer{
+  margin-top:auto;
+  padding:20px;
+  font-size:12px;
+  color:var(--muted);
 }
 </style>
 </head>
 
 <body>
 
-<h1>Sai tenere un segreto?</h1>
+<header>
+  <h1>Sai tenere un segreto?</h1>
+  <div class="subtitle">DavideKra — modalità karaoke</div>
+</header>
 
-<audio id="audio" controls>
+<button id="playBtn">▶ Ascolta</button>
+
+<audio id="audio" preload="metadata">
   <source src="DavideKra - 02 - Sai Tenere Un Segreto.mp3" type="audio/mpeg">
   <track kind="metadata"
          src="DavideKra - 02 - Sai Tenere Un Segreto.vtt"
@@ -63,16 +120,30 @@ h1{
 
 <div id="karaoke"></div>
 
+<footer>
+  © DavideKra
+</footer>
+
 <script>
 const audio = document.getElementById("audio");
+const playBtn = document.getElementById("playBtn");
 const karaoke = document.getElementById("karaoke");
 
+/* AVVIO AUDIO (richiesto dal browser) */
+playBtn.addEventListener("click", async () => {
+  await audio.play();
+  playBtn.style.display = "none";
+});
+
+/* KARAOKE */
 audio.addEventListener("loadedmetadata", () => {
   const track = audio.textTracks[0];
   track.mode = "hidden";
 
   const cues = track.cues;
   const lines = [];
+
+  karaoke.innerHTML = "";
 
   for (let i = 0; i < cues.length; i++) {
     const div = document.createElement("div");
