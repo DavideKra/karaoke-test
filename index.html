@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DavideKra — Album</title>
 
-<!-- FONTS -->
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Inter:wght@700&display=swap" rel="stylesheet">
 
 <style>
@@ -19,71 +18,50 @@ html,body{
   color:#fff;
 }
 
-/* =====================
-   3D STAGE
-   ===================== */
+/* ===== STAGE ===== */
 #stage{
   position:fixed;
   inset:0;
   perspective:1400px;
-  overflow:hidden;
 }
-
 #world{
   position:absolute;
   inset:0;
   transform-style:preserve-3d;
 }
 
-/* =====================
-   SCENE BASE
-   ===================== */
+/* ===== SCENE ===== */
 .scene{
   position:absolute;
   inset:0;
-  transform-style:preserve-3d;
   display:flex;
   align-items:center;
   justify-content:center;
+  transform-style:preserve-3d;
   transition:opacity .4s ease;
 }
 
-/* =====================
-   SCENE CONTENT
-   ===================== */
-.scene .content{
+.scene.hidden-meta .meta{
+  opacity:0;
+}
+
+/* ===== META ===== */
+.meta{
   text-align:center;
-  pointer-events:none;
+  transition:opacity .4s ease;
 }
 
-/* =====================
-   SCENE 1 — SAI TENERE UN SEGRETO
-   ===================== */
-#scene1{
-  background:
-    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
-    url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:contain;
-}
-
-#scene1{
-  transform:translateZ(0);
-}
-
-#scene1 h1{
+.meta h1{
   font-family:'Rubik Dirt', cursive;
   font-size:clamp(34px,6vw,68px);
   margin:0;
 }
-
-#scene1 .artist{
+.meta .artist{
   margin-top:8px;
   opacity:.7;
 }
 
-/* karaoke */
+/* ===== KARAOKE ===== */
 #karaoke{
   position:absolute;
   inset:0;
@@ -92,7 +70,6 @@ html,body{
   justify-content:center;
   pointer-events:none;
 }
-
 #line{
   font-family:'Rubik Dirt', cursive;
   font-size:clamp(30px,5vw,58px);
@@ -104,40 +81,8 @@ html,body{
   transition:opacity .3s ease;
 }
 
-/* =====================
-   SCENE 2 — 2 COSE INSIEME
-   ===================== */
-#scene2{
-  transform:translateZ(-1200px);
-  background:
-    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
-    url("https://i.ibb.co/yndKknVM/2-cose-insieme.png");
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:contain;
-}
-
-#scene2 h1{
-  font-size:clamp(34px,6vw,64px);
-  margin:0;
-}
-
-#scene2 .artist{
-  margin-top:8px;
-  opacity:.7;
-}
-
-#scene2 .play{
-  margin-top:22px;
-  font-size:14px;
-  opacity:.8;
-}
-
-/* =====================
-   PLAYER
-   ===================== */
+/* ===== PLAYER ===== */
 #audio{display:none}
-
 #controls{
   position:fixed;
   bottom:26px;
@@ -149,7 +94,6 @@ html,body{
   opacity:.85;
   z-index:20;
 }
-
 #controls button{
   background:none;
   border:none;
@@ -163,40 +107,13 @@ html,body{
 <body>
 
 <div id="stage">
-  <div id="world">
-
-    <!-- SCENE 1 -->
-    <div id="scene1" class="scene">
-      <div class="content">
-        <h1>Sai tenere un segreto?</h1>
-        <div class="artist">DavideKra</div>
-      </div>
-
-      <div id="karaoke">
-        <div id="line"></div>
-      </div>
-    </div>
-
-    <!-- SCENE 2 -->
-    <div id="scene2" class="scene">
-      <div class="content">
-        <h1>2 Cose Insieme</h1>
-        <div class="artist">DavideKra</div>
-        <div class="play">play</div>
-      </div>
-    </div>
-
-  </div>
+  <div id="world"></div>
 </div>
 
 <!-- AUDIO -->
-<audio id="audio" preload="metadata">
-  <source src="DavideKra - 02 - Sai Tenere Un Segreto.mp3" type="audio/mpeg">
-  <track id="lyricsTrack" kind="subtitles" srclang="it"
-         src="DavideKra - 02 - Sai Tenere Un Segreto.vtt" default>
-</audio>
+<audio id="audio" preload="metadata"></audio>
 
-<!-- CONTROLS -->
+<!-- PLAYER -->
 <div id="controls">
   <button id="back">−10s</button>
   <button id="play">play</button>
@@ -205,93 +122,160 @@ html,body{
 
 <script>
 /* =====================
-   CAMERA SCROLL (AVANTI / INDIETRO)
+   TRACKLIST
    ===================== */
-const scenes = [
-  { el: document.getElementById("scene1"), z: 0 },
-  { el: document.getElementById("scene2"), z: -1200 }
+const tracks = [
+  {
+    title:"Sai tenere un segreto?",
+    artist:"DavideKra",
+    cover:"https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
+    audio:"DavideKra - 02 - Sai Tenere Un Segreto.mp3",
+    vtt:"DavideKra - 02 - Sai Tenere Un Segreto.vtt"
+  },
+  {
+    title:"2 Cose Insieme",
+    artist:"DavideKra",
+    cover:"https://i.ibb.co/yndKknVM/2-cose-insieme.png",
+    audio:null,
+    vtt:null
+  }
 ];
 
-let cameraZ = 0;
-const MAX_Z = 1200;
-const SPEED = 0.9;
+const SCENE_DEPTH = 1200;
+const world = document.getElementById("world");
+const scenes = [];
+
+/* =====================
+   CREATE SCENES
+   ===================== */
+tracks.forEach((t,i)=>{
+  const s=document.createElement("div");
+  s.className="scene";
+  s.style.background=`
+    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
+    url("${t.cover}")`;
+  s.style.backgroundRepeat="no-repeat";
+  s.style.backgroundPosition="center";
+  s.style.backgroundSize="contain";
+
+  s.innerHTML=`
+    <div class="meta">
+      <h1>${t.title}</h1>
+      <div class="artist">${t.artist}</div>
+    </div>
+  `;
+
+  s.style.transform=`translateZ(${-i*SCENE_DEPTH}px)`;
+  world.appendChild(s);
+
+  scenes.push({el:s,z:-i*SCENE_DEPTH,track:t});
+});
+
+/* =====================
+   CAMERA + ACTIVE SCENE
+   ===================== */
+let cameraZ=0;
+let activeIndex=0;
+const audio=document.getElementById("audio");
+const playBtn=document.getElementById("play");
+
+function stopAudio(){
+  audio.pause();
+  audio.src="";
+  playBtn.textContent="play";
+  scenes.forEach(s=>s.el.classList.remove("hidden-meta"));
+  document.getElementById("line").style.opacity=0;
+}
 
 function updateScenes(){
-  scenes.forEach(scene=>{
-    const relativeZ = scene.z + cameraZ;
+  let closest=0;
+  let minDist=Infinity;
 
-    const t = Math.max(0, Math.min(1, 1 - Math.abs(relativeZ) / 1200));
-    const scale = 0.7 + t * 0.3;
-    const opacity = t;
+  scenes.forEach((s,i)=>{
+    const rz=s.z+cameraZ;
+    const dist=Math.abs(rz);
+    if(dist<minDist){minDist=dist;closest=i;}
 
-    scene.el.style.transform =
-      `translateZ(${relativeZ}px) scale(${scale})`;
-    scene.el.style.opacity = opacity;
+    const t=Math.max(0,1-dist/SCENE_DEPTH);
+    s.el.style.transform=`translateZ(${rz}px) scale(${0.7+t*0.3})`;
+    s.el.style.opacity=t;
   });
+
+  if(closest!==activeIndex){
+    activeIndex=closest;
+    stopAudio();
+  }
 }
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-  cameraZ += e.deltaY * SPEED;
-  cameraZ = Math.max(0, Math.min(MAX_Z, cameraZ));
+  cameraZ+=e.deltaY*0.9;
+  cameraZ=Math.max(0,Math.min((tracks.length-1)*SCENE_DEPTH,cameraZ));
   updateScenes();
 },{passive:false});
 
 updateScenes();
 
 /* =====================
-   AUDIO / PLAYER
+   PLAY / PAUSE
    ===================== */
-const audio = document.getElementById("audio");
-const playBtn = document.getElementById("play");
-
-document.getElementById("back").onclick=()=>{
-  audio.currentTime = Math.max(0, audio.currentTime - 10);
-};
-document.getElementById("forward").onclick=()=>{
-  audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
-};
-
 playBtn.onclick=()=>{
+  const scene=scenes[activeIndex];
+  if(!scene.track.audio) return;
+
   if(audio.paused){
+    audio.src=scene.track.audio;
     audio.play();
     playBtn.textContent="pause";
+    scene.el.classList.add("hidden-meta");
   }else{
     audio.pause();
     playBtn.textContent="play";
+    scene.el.classList.remove("hidden-meta");
   }
 };
 
+document.getElementById("back").onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
+document.getElementById("forward").onclick=()=>audio.currentTime=Math.min(audio.duration||0,audio.currentTime+10);
+
 /* =====================
-   KARAOKE
+   KARAOKE (SCENA 1)
    ===================== */
-const trackEl = document.getElementById("lyricsTrack");
-const line = document.getElementById("line");
-let lastCue = null;
+const karaoke=document.createElement("div");
+karaoke.id="karaoke";
+karaoke.innerHTML='<div id="line"></div>';
+document.body.appendChild(karaoke);
 
-trackEl.addEventListener("load",()=>{
-  const track = trackEl.track;
-  track.mode = "hidden";
+const line=document.getElementById("line");
+let trackEl=null,lastCue=null;
 
-  const refresh = ()=>{
-    const a = track.activeCues;
-    if(!a || !a.length){
-      line.style.opacity = 0;
-      return;
-    }
-    const cue = a[0];
-    if(cue === lastCue) return;
-    lastCue = cue;
+audio.addEventListener("loadedmetadata",()=>{
+  if(trackEl) trackEl.remove();
+  const scene=scenes[activeIndex];
+  if(!scene.track.vtt) return;
 
-    line.style.opacity = 0;
-    setTimeout(()=>{
-      line.textContent = cue.text;
-      line.style.opacity = 1;
-    },200);
-  };
+  trackEl=document.createElement("track");
+  trackEl.kind="subtitles";
+  trackEl.src=scene.track.vtt;
+  trackEl.default=true;
+  audio.appendChild(trackEl);
 
-  track.addEventListener("cuechange", refresh);
-  audio.addEventListener("timeupdate", refresh);
+  trackEl.addEventListener("load",()=>{
+    const track=trackEl.track;
+    track.mode="hidden";
+    track.addEventListener("cuechange",()=>{
+      const a=track.activeCues;
+      if(!a||!a.length){line.style.opacity=0;return;}
+      const cue=a[0];
+      if(cue===lastCue)return;
+      lastCue=cue;
+      line.style.opacity=0;
+      setTimeout(()=>{
+        line.textContent=cue.text;
+        line.style.opacity=1;
+      },200);
+    });
+  });
 });
 </script>
 
