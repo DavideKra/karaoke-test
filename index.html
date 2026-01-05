@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sai tenere un segreto?</title>
 
-<!-- FONT HORROR LEGGIBILE -->
-<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&display=swap" rel="stylesheet">
+<!-- FONTS -->
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@700;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --fg:#ffffff;
+  --fg:#fff;
   --muted:rgba(255,255,255,.65);
 }
 
@@ -18,38 +18,36 @@
 html,body{margin:0;height:100%}
 
 body{
-  font-family:'Rubik Dirt', system-ui, sans-serif;
+  font-family:Inter, system-ui, sans-serif;
   color:var(--fg);
   overflow:hidden;
   background:#000;
 }
 
 /* =====================
-   BACKGROUND LAYER (ZOOM)
+   BACKGROUND (ONLY IMAGE MOVES)
    ===================== */
-body::before{
-  content:"";
+#bg{
   position:fixed;
   inset:0;
-  z-index:-1;
+  z-index:0;
   background-image:
     linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.85)),
     url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  animation:bgZoom 18s ease-in-out infinite;
-  transform-origin:center;
+  animation:bgZoom 20s ease-in-out infinite;
 }
 
 @keyframes bgZoom{
-  0%   { transform:scale(1); }
-  50%  { transform:scale(1.06); }
-  100% { transform:scale(1); }
+  0%{transform:scale(1)}
+  50%{transform:scale(1.06)}
+  100%{transform:scale(1)}
 }
 
 /* =====================
-   INTRO TITLE (CENTER)
+   INTRO SCREEN (CLEAN)
    ===================== */
 #intro{
   position:fixed;
@@ -59,31 +57,38 @@ body::before{
   align-items:center;
   justify-content:center;
   text-align:center;
-  background:rgba(0,0,0,.35);
-  backdrop-filter:blur(2px);
-  z-index:15;
-  transition:opacity .8s ease;
+  z-index:5;
+  background:rgba(0,0,0,.6);
+}
+
+#intro h1{
+  font-family:Creepster, cursive;
+  font-size:clamp(36px,6vw,72px);
+  margin:0;
+}
+
+#intro .author{
+  margin-top:14px;
+  font-size:15px;
+  color:var(--muted);
+}
+
+/* hint sotto */
+#hint{
+  margin-top:40px;
+  font-size:14px;
+  color:var(--muted);
+  cursor:pointer;
 }
 
 #intro.hide{
   opacity:0;
   pointer-events:none;
-}
-
-#intro h1{
-  margin:0;
-  font-size:clamp(34px,6vw,64px);
-  letter-spacing:1px;
-}
-
-#intro .author{
-  margin-top:14px;
-  font-size:16px;
-  color:var(--muted);
+  transition:opacity .8s ease;
 }
 
 /* =====================
-   STAGE
+   STAGE (TEXT ALWAYS VISIBLE)
    ===================== */
 #stage{
   position:fixed;
@@ -92,27 +97,25 @@ body::before{
   align-items:center;
   justify-content:center;
   padding:40px;
+  z-index:10;
   pointer-events:none;
 }
 
 #line{
   max-width:1100px;
   text-align:center;
-  font-size:clamp(34px,5vw,64px);
+  font-size:clamp(32px,5vw,60px);
+  font-weight:800;
   line-height:1.25;
-  text-shadow:0 12px 44px rgba(0,0,0,.9);
-  opacity:0;
-  transition:all .55s ease;
-}
-
-#line.visible{
-  opacity:1;
-  transform:none;
-  filter:none;
+  text-shadow:
+    0 12px 44px rgba(0,0,0,.95),
+    0 0 12px rgba(0,0,0,.7);
+  opacity:1; /* MAI A ZERO */
+  transition:transform .5s ease, filter .5s ease;
 }
 
 /* =====================
-   PLAYER MINIMAL
+   PLAYER
    ===================== */
 #audio{display:none}
 
@@ -125,7 +128,7 @@ body::before{
   gap:24px;
   font-size:13px;
   color:var(--muted);
-  z-index:10;
+  z-index:20;
 }
 
 #controls button{
@@ -142,116 +145,78 @@ body::before{
 }
 
 /* =====================
-   START OVERLAY
+   TRANSITIONS (SAFE)
    ===================== */
-#hint{
-  position:fixed;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:18px;
-  cursor:pointer;
-  z-index:20;
-}
-
-/* =====================
-   TRANSITIONS
-   ===================== */
-.out{opacity:0}
-.in{opacity:1}
-
-.fade.in{transform:none}
-.fade.out{transform:scale(.92)}
-
-.slide-up.in{transform:none}
-.slide-up.out{transform:translateY(40px)}
-
-.slide-down.in{transform:none}
-.slide-down.out{transform:translateY(-40px)}
-
-.blur.in{filter:none}
-.blur.out{filter:blur(14px)}
-
-.zoom.in{transform:none}
-.zoom.out{transform:scale(1.18)}
-
-.rotate.in{transform:none}
-.rotate.out{transform:rotate(-2deg) scale(.94)}
-
-.stretch.in{transform:none}
-.stretch.out{transform:scaleY(.6)}
-
-.slide-x.in{transform:none}
-.slide-x.out{transform:translateX(-60px)}
+.fade{transform:none}
+.slide-up{transform:translateY(40px)}
+.slide-down{transform:translateY(-40px)}
+.zoom{transform:scale(1.15)}
+.blur{filter:blur(12px)}
+.rotate{transform:rotate(-2deg) scale(.95)}
+.stretch{transform:scaleY(.6)}
+.slide-x{transform:translateX(-60px)}
 </style>
 </head>
 
 <body>
 
+<div id="bg"></div>
+
 <!-- INTRO -->
 <div id="intro">
   <h1>Sai tenere un segreto?</h1>
   <div class="author">DavideKra</div>
+  <div id="hint">clicca per iniziare</div>
 </div>
 
+<!-- TEXT -->
 <div id="stage">
-  <div id="line" class="visible">…</div>
+  <div id="line">…</div>
 </div>
 
+<!-- CONTROLS -->
 <div id="controls">
   <button id="back">−10s</button>
   <button id="play">play</button>
   <button id="forward">+10s</button>
 </div>
 
-<div id="hint">clicca per iniziare</div>
-
 <audio id="audio" preload="metadata">
   <source src="DavideKra - 02 - Sai Tenere Un Segreto.mp3" type="audio/mpeg">
-  <track id="lyricsTrack"
-         kind="subtitles"
-         srclang="it"
-         src="DavideKra - 02 - Sai Tenere Un Segreto.vtt"
-         default>
+  <track id="lyricsTrack" kind="subtitles" srclang="it"
+         src="DavideKra - 02 - Sai Tenere Un Segreto.vtt" default>
 </audio>
 
 <script>
-const audio = document.getElementById("audio");
-const trackEl = document.getElementById("lyricsTrack");
-const lineEl = document.getElementById("line");
-const hint = document.getElementById("hint");
-const intro = document.getElementById("intro");
+const audio=document.getElementById("audio");
+const trackEl=document.getElementById("lyricsTrack");
+const line=document.getElementById("line");
+const intro=document.getElementById("intro");
 
-const btnPlay = document.getElementById("play");
-const btnBack = document.getElementById("back");
-const btnForw = document.getElementById("forward");
+const playBtn=document.getElementById("play");
+const backBtn=document.getElementById("back");
+const forwBtn=document.getElementById("forward");
 
 let lastCue=null;
-
-const transitions=["fade","slide-up","slide-down","blur","zoom","rotate","stretch","slide-x"];
+const transitions=["fade","slide-up","slide-down","zoom","blur","rotate","stretch","slide-x"];
 const rand=()=>transitions[Math.floor(Math.random()*transitions.length)];
 
 /* START */
-hint.onclick=async()=>{
+document.getElementById("hint").onclick=async()=>{
   await audio.play();
-  hint.style.display="none";
   intro.classList.add("hide");
-  btnPlay.textContent="pause";
+  playBtn.textContent="pause";
 };
 
 /* PLAY */
-btnPlay.onclick=()=>{
-  if(audio.paused){
-    audio.play();btnPlay.textContent="pause";
-  }else{
-    audio.pause();btnPlay.textContent="play";
-  }
+playBtn.onclick=()=>{
+  if(audio.paused){audio.play();playBtn.textContent="pause";}
+  else{audio.pause();playBtn.textContent="play";}
 };
 
 /* SEEK */
-btnBack.onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
-btnForw.onclick=()=>audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
+backBtn.onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
+forwBtn.onclick=()=>audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
 audio.addEventListener("seeked",()=>lastCue=null);
 
 /* KARAOKE */
@@ -261,21 +226,17 @@ trackEl.addEventListener("load",()=>{
 
   const refresh=()=>{
     const a=track.activeCues;
-    if(!a||!a.length){
-      lineEl.textContent="…";
-      lineEl.className="visible in fade";
-      return;
-    }
+    if(!a||!a.length){line.textContent="…";line.className="fade";return;}
     const cue=a[0];
     if(cue===lastCue)return;
     lastCue=cue;
 
     const t=rand();
-    lineEl.className=`out ${t}`;
+    line.className=t;
     setTimeout(()=>{
-      lineEl.textContent=cue.text;
-      lineEl.className=`visible in ${t}`;
-    },280);
+      line.textContent=cue.text;
+      line.className="fade";
+    },260);
   };
 
   track.addEventListener("cuechange",refresh);
