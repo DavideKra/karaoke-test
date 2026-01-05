@@ -1,71 +1,54 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DavideKra — Album 3D</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Davide*Kra — Album 3D</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
 <style>
 *{box-sizing:border-box}
-html,body{
-  margin:0;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  font-family:Inter, system-ui, sans-serif;
-  color:#fff;
-}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
 
 /* ===== STAGE ===== */
 #stage{
-  position:fixed;
-  inset:0;
+  position:fixed; inset:0;
   perspective:1400px;
   overflow:hidden;
 }
-#world{
-  position:absolute;
-  inset:0;
-  transform-style:preserve-3d;
-}
+#world{position:absolute; inset:0; transform-style:preserve-3d;}
 
 /* ===== SCENE ===== */
 .scene{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
   transform-style:preserve-3d;
   transition:opacity .25s ease;
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  will-change: transform, opacity;
+  will-change:transform,opacity;
 }
 
-/* scene overlay scuro */
+/* overlay scuro per leggibilità */
 .scene::before{
   content:"";
   position:absolute; inset:0;
-  background:linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.90));
+  background:linear-gradient(to bottom, rgba(0,0,0,.42), rgba(0,0,0,.90));
   pointer-events:none;
 }
+.scene > *{position:relative; z-index:2}
 
-/* contenuto sopra overlay */
-.scene > *{ position:relative; z-index:2; }
-
-/* ===== META ===== */
+/* ===== META (titolo/artista) ===== */
 .meta{
   text-align:center;
-  transition:opacity .35s ease;
+  transition:opacity .35s ease, transform .35s ease, filter .35s ease;
   pointer-events:none;
   max-width:86vw;
 }
-
-.meta h1{
+.meta .title{
   margin:0;
   font-size:clamp(34px,6vw,68px);
   line-height:1.05;
@@ -73,37 +56,74 @@ html,body{
 }
 .meta .artist{
   margin-top:10px;
-  opacity:.7;
+  opacity:.72;
   text-shadow:0 10px 36px rgba(0,0,0,.9);
 }
 
-/* quando una scena è in play, nascondi meta */
-.scene.is-playing .meta{ opacity:0; }
+/* meta sparisce quando la traccia della scena sta suonando */
+.scene.is-playing .meta{
+  opacity:0;
+  transform:translateY(-6px);
+  filter:blur(.4px);
+}
+
+/* ===== STILI (3) ===== */
+.scene[data-style="thriller"] .meta .title{
+  font-family:"Rubik Dirt", cursive;
+  letter-spacing:.3px;
+}
+.scene[data-style="normale"] .meta .title{
+  font-family:"Roboto", system-ui, sans-serif;
+  font-weight:700;
+  letter-spacing:.2px;
+}
+.scene[data-style="amore"] .meta .title{
+  font-family:"Playfair Display", serif;
+  font-weight:700;
+  letter-spacing:.15px;
+}
 
 /* ===== KARAOKE ===== */
 #karaoke{
-  position:fixed;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
   pointer-events:none;
   z-index:15;
+  padding:40px;
 }
 #line{
-  font-family:'Rubik Dirt', cursive;
-  font-size:clamp(30px,5vw,58px);
   max-width:1100px;
   text-align:center;
   line-height:1.25;
-  text-shadow:0 12px 44px rgba(0,0,0,.95);
   opacity:0;
-  transition:opacity .22s ease;
+  transition:opacity .22s ease, transform .35s ease, filter .35s ease;
+  text-shadow:0 12px 44px rgba(0,0,0,.95);
 }
+
+/* Font testo per stile (richiesto: standard = Roboto) */
+body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; }
+body[data-active-style="normale"]  #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
+body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
+
+/* size comune */
+#line{ font-size:clamp(30px,5vw,58px); }
+
+/* ===== TRANSITIONS (10+) ===== */
+/* (applicate al line quando cambia cue) */
+.t-fade-in   { transform:none; filter:none; }
+.t-pop       { transform:scale(1.08); filter:none; }
+.t-slide-up  { transform:translateY(40px); filter:none; }
+.t-slide-down{ transform:translateY(-40px); filter:none; }
+.t-slide-left{ transform:translateX(60px); filter:none; }
+.t-slide-right{transform:translateX(-60px); filter:none; }
+.t-rotate    { transform:rotate(-3deg) scale(.98); filter:none; }
+.t-blur      { transform:none; filter:blur(14px); }
+.t-stretch   { transform:scaleY(.72); filter:none; }
+.t-snap      { transform:scale(.92); filter:contrast(1.2); }
+.t-jitter    { transform:translateX(-6px) rotate(.8deg); filter:none; }
 
 /* ===== PLAYER ===== */
 #audio{display:none}
-
 #controls{
   position:fixed;
   bottom:26px;
@@ -111,40 +131,45 @@ html,body{
   transform:translateX(-50%);
   display:flex;
   gap:24px;
-  font-size:13px;
-  opacity:.85;
+  font: 13px/1.2 "Roboto", system-ui, sans-serif;
+  opacity:.86;
   z-index:20;
   user-select:none;
 }
 #controls button{
   background:none;
   border:none;
-  color:inherit;
+  color:rgba(255,255,255,.85);
   cursor:pointer;
-  font-family:inherit;
+  padding:4px 6px;
 }
-#controls button:hover{ text-decoration:underline }
+#controls button:hover{
+  color:#fff;
+  text-decoration:underline;
+}
 
-/* ===== BREATH (solo sulla scena attiva in play) ===== */
+/* ===== BREATH (bpm-driven) ===== */
+/* usa CSS vars: --rz, --scale, --breatheScale, --breatheDur */
 @keyframes bgPump{
   0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
-  50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * 1.18)); }
+  50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
   100% { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
 }
-
-/* attiva respiro (la durata la puoi tweakare) */
 .scene.breathing{
-  animation:bgPump 1.15s linear infinite;
+  animation: bgPump var(--breatheDur, 1.2s) linear infinite;
+}
+
+/* riduci motion per accessibilità */
+@media (prefers-reduced-motion: reduce){
+  .scene.breathing{ animation:none; }
+  #line{ transition:none; }
 }
 </style>
 </head>
 
-<body>
+<body data-active-style="thriller">
 
-<div id="stage">
-  <div id="world"></div>
-</div>
-
+<div id="stage"><div id="world"></div></div>
 <div id="karaoke"><div id="line"></div></div>
 
 <audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
@@ -156,80 +181,138 @@ html,body{
 </div>
 
 <script>
-/* =====================
-   TRACKLIST (2 TRACCE)
-   ===================== */
+/* =========================================================
+   CONFIG (3 stili + bpm)
+   ========================================================= */
+
 const tracks = [
   {
-    title: "Sai tenere un segreto?",
-    artist: "DavideKra",
+    artist: "Davide*Kra",
+    title: "Sai Tenere Un Segreto?",
+    bpm: 126,
+    style: "thriller",
     cover: "https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
     audio: "DavideKra - 02 - Sai Tenere Un Segreto.mp3",
-    vtt:   "DavideKra - 02 - Sai Tenere Un Segreto.vtt",
-    titleFont: "'Rubik Dirt', cursive"
+    vtt:   "DavideKra - 02 - Sai Tenere Un Segreto.vtt"
   },
   {
-    title: "2 Cose Insieme",
-    artist: "DavideKra",
+    artist: "Davide*Kra",
+    title: "2 cose insieme",
+    bpm: 91,
+    style: "normale",
     cover: "https://i.ibb.co/yndKknVM/2-cose-insieme.png",
     audio: "DavideKra - 03 - 2 Cose Insieme.mp3",
-    vtt:   "DavideKra - 03 - 2 Cose Insieme.vtt",
-    titleFont: "Inter, system-ui, sans-serif" // standard
+    vtt:   "DavideKra - 03 - 2 Cose Insieme.vtt"
   }
 ];
 
-/* =====================
-   CREATE SCENES
-   ===================== */
-const SCENE_DEPTH = 1200;
-const world = document.getElementById("world");
+/* =========================================================
+   STYLE PRESETS (animazioni per argomento)
+   ========================================================= */
 
-const scenes = tracks.map((t, i) => {
+/**
+ * Ogni stile:
+ * - transitions: set di transizioni possibili per il karaoke
+ * - breatheAmp: moltiplicatore ampiezza respiro (si somma al bpm)
+ */
+const STYLE = {
+  thriller: {
+    transitions: ["t-blur","t-rotate","t-jitter","t-snap","t-slide-up","t-slide-down","t-pop","t-stretch","t-fade-in"],
+    breatheAmp: 1.10
+  },
+  normale: {
+    transitions: ["t-fade-in","t-slide-up","t-slide-down","t-pop","t-slide-left","t-slide-right","t-snap"],
+    breatheAmp: 1.00
+  },
+  amore: {
+    transitions: ["t-fade-in","t-pop","t-slide-up","t-slide-right","t-slide-left","t-snap","t-stretch"],
+    breatheAmp: 0.95
+  }
+};
+
+/* =========================================================
+   BPM -> breathing mapping
+   ========================================================= */
+/**
+ * Vogliamo qualcosa di semplice e "musicale":
+ * - dur ~ 120 / bpm secondi (mezzo periodo), con clamp
+ * - amp cresce con bpm (più bpm = respiro più "dance")
+ */
+function bpmToBreath(bpm, styleKey){
+  const s = STYLE[styleKey] || STYLE.normale;
+
+  // durata: più bpm => più veloce
+  // 120/bpm dà: 126->0.95s, 91->1.32s, 70->1.71s
+  let dur = 120 / Math.max(40, bpm);
+  dur = clamp(dur, 0.75, 2.2);
+
+  // ampiezza: cresce col bpm, ma con clamp per non distruggere tutto
+  // base 1.10 a bpm 70 ~ 1.10; bpm 126 ~ 1.18
+  let amp = 1.06 + (bpm - 70) * 0.0015; // 70=>1.06, 126=>~1.144
+  amp = clamp(amp, 1.06, 1.22) * s.breatheAmp; // stile modula
+  amp = clamp(amp, 1.06, 1.28);
+
+  return { dur, amp };
+}
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+/* =========================================================
+   CREATE SCENES
+   ========================================================= */
+const world = document.getElementById("world");
+const SCENE_DEPTH = 1200;
+
+const scenes = tracks.map((t,i)=>{
   const s = document.createElement("div");
   s.className = "scene";
+  s.dataset.style = t.style;
   s.style.backgroundImage = `url("${t.cover}")`;
 
   s.innerHTML = `
     <div class="meta">
-      <h1 style="font-family:${t.titleFont}">${t.title}</h1>
+      <div class="title">${t.title}</div>
       <div class="artist">${t.artist}</div>
     </div>
   `;
 
   world.appendChild(s);
-  return { el: s, z: -i * SCENE_DEPTH, track: t };
+  return { el:s, z:-i*SCENE_DEPTH, track:t };
 });
 
-/* =====================
+/* =========================================================
    CAMERA SCROLL
-   ===================== */
+   ========================================================= */
 let cameraZ = 0;
 let activeIndex = 0;
 
 const MAX_Z = SCENE_DEPTH * (tracks.length - 1);
 const SPEED = 0.9;
 
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
 function computeActiveIndex(){
-  let bestI = 0;
-  let bestD = Infinity;
+  let bestI=0, bestD=Infinity;
   for (let i=0;i<scenes.length;i++){
     const rz = scenes[i].z + cameraZ;
     const d = Math.abs(rz);
-    if (d < bestD){ bestD = d; bestI = i; }
+    if(d < bestD){ bestD=d; bestI=i; }
   }
   return bestI;
 }
 
-/* =====================
-   AUDIO + KARAOKE
-   ===================== */
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  cameraZ = clamp(cameraZ + e.deltaY * SPEED, 0, MAX_Z);
+  updateScenes(); // NON stoppiamo audio qui (come richiesto)
+},{passive:false});
+
+/* =========================================================
+   AUDIO + KARAOKE (continua durante scroll)
+   ========================================================= */
 const audio = document.getElementById("audio");
 const playBtn = document.getElementById("play");
 const line = document.getElementById("line");
 
-let currentTrackIndex = null; // traccia effettivamente caricata in audio
+let currentTrackIndex = null; // quale traccia è caricata e suona
 let trackEl = null;
 let lastCue = null;
 
@@ -237,32 +320,31 @@ function clearKaraoke(){
   lastCue = null;
   line.style.opacity = 0;
   line.textContent = "";
-  if (trackEl){
+  if(trackEl){
     try{ trackEl.remove(); }catch(e){}
     trackEl = null;
   }
 }
 
-function setBreathing(){
-  // respiro SOLO se: audio in play && sei sulla scena della traccia che sta suonando
-  scenes.forEach((s, i) => {
-    const shouldBreathe = (!audio.paused) && (currentTrackIndex === i) && (activeIndex === i);
-    s.el.classList.toggle("breathing", shouldBreathe);
-  });
+function setActiveStyle(styleKey){
+  document.body.dataset.activeStyle = styleKey || "normale";
+}
+
+function pickTransition(styleKey){
+  const set = (STYLE[styleKey] || STYLE.normale).transitions;
+  return set[(Math.random()*set.length)|0];
 }
 
 function loadTrack(index){
   const t = scenes[index].track;
-
-  // se già caricata, non ricaricare
-  if (currentTrackIndex === index && audio.src) return;
+  if(currentTrackIndex === index && audio.src) return;
 
   clearKaraoke();
-
   currentTrackIndex = index;
+
   audio.src = t.audio;
 
-  // track vtt
+  // sostituisci track
   trackEl = document.createElement("track");
   trackEl.kind = "subtitles";
   trackEl.srclang = "it";
@@ -271,23 +353,32 @@ function loadTrack(index){
   trackEl.default = true;
   audio.appendChild(trackEl);
 
-  trackEl.addEventListener("load", () => {
+  // stile testo karaoke
+  setActiveStyle(t.style);
+
+  trackEl.addEventListener("load",()=>{
     const tt = trackEl.track;
     tt.mode = "hidden";
 
-    const refresh = () => {
+    const refresh = ()=>{
       const a = tt.activeCues;
-      if (!a || !a.length){
+      if(!a || !a.length){
         line.style.opacity = 0;
         return;
       }
       const cue = a[0];
-      if (cue === lastCue) return;
+      if(cue === lastCue) return;
       lastCue = cue;
 
+      // transition diversa per stile
+      const tr = pickTransition(t.style);
+      line.className = tr;
       line.style.opacity = 0;
-      setTimeout(() => {
+
+      setTimeout(()=>{
         line.textContent = cue.text;
+        // reset verso "neutro" (t-fade-in) per render stabile
+        line.className = "t-fade-in";
         line.style.opacity = 1;
       }, 160);
     };
@@ -298,27 +389,63 @@ function loadTrack(index){
 }
 
 function updatePlayingMeta(){
-  // nascondi meta SOLO sulla scena della traccia che sta suonando
-  scenes.forEach((s, i) => {
+  scenes.forEach((s,i)=>{
     const isPlayingThis = (!audio.paused) && (currentTrackIndex === i);
     s.el.classList.toggle("is-playing", isPlayingThis);
   });
 }
 
-audio.addEventListener("play", () => { updatePlayingMeta(); setBreathing(); });
-audio.addEventListener("pause", () => { updatePlayingMeta(); setBreathing(); });
-audio.addEventListener("ended", () => {
-  playBtn.textContent = "play";
-  updatePlayingMeta();
-  clearKaraoke();
-  setBreathing();
+function setBreathing(){
+  // respiro solo se: audio in play + sei sulla scena del brano in ascolto
+  scenes.forEach((s,i)=>{
+    const should = (!audio.paused) && (currentTrackIndex === i) && (activeIndex === i);
+    s.el.classList.toggle("breathing", should);
+
+    if(should){
+      const { dur, amp } = bpmToBreath(s.track.bpm, s.track.style);
+      s.el.style.setProperty("--breatheDur", `${dur}s`);
+      s.el.style.setProperty("--breatheScale", `${amp}`);
+    }
+  });
+}
+
+audio.addEventListener("play", ()=>{ playBtn.textContent="pause"; updatePlayingMeta(); setBreathing(); });
+audio.addEventListener("pause", ()=>{ playBtn.textContent="play"; updatePlayingMeta(); setBreathing(); });
+audio.addEventListener("ended", ()=>{ playBtn.textContent="play"; updatePlayingMeta(); clearKaraoke(); setBreathing(); });
+
+playBtn.addEventListener("click", async ()=>{
+  const t = scenes[activeIndex].track;
+
+  // se stai su una scena senza file (in futuro), non fare nulla
+  if(!t.audio || !t.vtt) return;
+
+  if(audio.paused){
+    loadTrack(activeIndex);
+    await audio.play();
+    return;
+  }
+
+  // se sta suonando:
+  // - stessa traccia -> pausa
+  // - traccia diversa -> switch e continua
+  if(currentTrackIndex === activeIndex){
+    audio.pause();
+    clearKaraoke();
+  } else {
+    loadTrack(activeIndex);
+    await audio.play();
+  }
 });
 
-/* =====================
-   UPDATE SCENES (render)
-   ===================== */
+/* seek */
+document.getElementById("back").addEventListener("click", ()=>{ audio.currentTime = Math.max(0, audio.currentTime - 10); });
+document.getElementById("forward").addEventListener("click", ()=>{ audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); });
+
+/* =========================================================
+   RENDER SCENES + breathing vars
+   ========================================================= */
 function updateScenes(){
-  scenes.forEach((s) => {
+  scenes.forEach((s)=>{
     const rz = s.z + cameraZ;
     const dist = Math.abs(rz);
 
@@ -326,78 +453,22 @@ function updateScenes(){
     const scale = 0.72 + t * 0.28;
     const opacity = t;
 
-    // set CSS vars per far “respirare” mantenendo la profondità
+    // variabili per breathing
     s.el.style.setProperty("--rz", `${rz}px`);
     s.el.style.setProperty("--scale", `${scale}`);
 
     // se non sta respirando, applica transform normale
-    if (!s.el.classList.contains("breathing")) {
+    if(!s.el.classList.contains("breathing")){
       s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
     }
 
     s.el.style.opacity = opacity.toFixed(3);
   });
 
-  const idx = computeActiveIndex();
-  activeIndex = idx;
-
-  // aggiorna respiro (dipende dalla scena attiva)
+  activeIndex = computeActiveIndex();
   setBreathing();
 }
 
-window.addEventListener("wheel", (e) => {
-  e.preventDefault();
-  cameraZ = clamp(cameraZ + e.deltaY * SPEED, 0, MAX_Z);
-  updateScenes();
-}, { passive:false });
-
-/* =====================
-   PLAYER ACTIONS
-   ===================== */
-playBtn.addEventListener("click", async () => {
-  const t = scenes[activeIndex].track;
-
-  // se sei su una scena senza audio (in futuro)
-  if (!t.audio || !t.vtt) return;
-
-  // SE l'audio è fermo: avvia la traccia della scena attiva
-  if (audio.paused){
-    // carica sempre la traccia della scena attiva prima di play
-    loadTrack(activeIndex);
-    await audio.play();
-    playBtn.textContent = "pause";
-    updatePlayingMeta();
-    setBreathing();
-    return;
-  }
-
-  // SE l'audio sta suonando:
-  // - se premendo play sulla STESSA scena -> mette in pausa
-  // - se premendo play su scena DIVERSA -> switcha traccia e continua
-  if (currentTrackIndex === activeIndex){
-    audio.pause();
-    playBtn.textContent = "play";
-    updatePlayingMeta();
-    clearKaraoke();
-    setBreathing();
-  } else {
-    // switch di traccia senza fermare la “sessione”
-    loadTrack(activeIndex);
-    await audio.play();
-    playBtn.textContent = "pause";
-    updatePlayingMeta();
-    setBreathing();
-  }
-});
-
-document.getElementById("back").addEventListener("click", () => {
-  audio.currentTime = Math.max(0, audio.currentTime - 10);
-});
-document.getElementById("forward").addEventListener("click", () => {
-  audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
-});
-
-/* init */
 updateScenes();
 </script>
 
