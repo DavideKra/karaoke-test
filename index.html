@@ -6,7 +6,7 @@
 <title>DavideKra — Album</title>
 
 <!-- FONTS -->
-<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Rubik+Dirt&family=Inter:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Inter:wght@700&display=swap" rel="stylesheet">
 
 <style>
 *{box-sizing:border-box}
@@ -29,6 +29,13 @@ html,body{
   overflow:hidden;
 }
 
+/* camera */
+#world{
+  position:absolute;
+  inset:0;
+  transform-style:preserve-3d;
+}
+
 /* =====================
    SCENE BASE
    ===================== */
@@ -39,139 +46,215 @@ html,body{
   display:flex;
   align-items:center;
   justify-content:center;
-  transition:opacity .6s ease;
 }
 
 /* =====================
-   SCENE 1
+   SCENE CONTENT
+   ===================== */
+.scene .content{
+  text-align:center;
+  pointer-events:none;
+}
+
+/* =====================
+   SCENE 1 — SAI TENERE UN SEGRETO
    ===================== */
 #scene1{
+  transform:translateZ(0);
   background:
     linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
     url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  transform:translateZ(0) scale(1);
-  z-index:2;
-}
-
-#scene1 .content{
-  text-align:center;
 }
 
 #scene1 h1{
-  font-family:Rubik Dirt, cursive;
-  font-size:clamp(36px,6vw,70px);
+  font-family:'Rubik Dirt', cursive;
+  font-size:clamp(34px,6vw,68px);
   margin:0;
 }
 
 #scene1 .artist{
-  margin-top:10px;
+  margin-top:8px;
   opacity:.7;
 }
 
+/* karaoke */
+#karaoke{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+
+#line{
+  font-family:'Rubik Dirt', cursive;
+  font-size:clamp(30px,5vw,58px);
+  max-width:1100px;
+  text-align:center;
+  line-height:1.25;
+  text-shadow:0 12px 44px rgba(0,0,0,.95);
+  opacity:0;
+  transition:opacity .3s ease, transform .4s ease;
+}
+
 /* =====================
-   SCENE 2 (DIETRO)
+   SCENE 2 — 2 COSE INSIEME
    ===================== */
 #scene2{
+  transform:translateZ(-1200px);
   background:
-    linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.9)),
+    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
     url("https://i.ibb.co/yndKknVM/2-cose-insieme.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  transform:translateZ(-1200px) scale(.7);
-  z-index:1;
-}
-
-#scene2 .content{
-  text-align:center;
 }
 
 #scene2 h1{
   font-size:clamp(34px,6vw,64px);
   margin:0;
-  font-weight:700;
 }
 
 #scene2 .artist{
-  margin-top:10px;
+  margin-top:8px;
   opacity:.7;
 }
 
 #scene2 .play{
-  margin-top:28px;
+  margin-top:22px;
   font-size:14px;
   opacity:.8;
 }
 
 /* =====================
-   SMOOTH TRANSITION
+   PLAYER
    ===================== */
-.scene{
-  transition:
-    transform .12s linear,
-    opacity .6s ease;
+#audio{display:none}
+
+#controls{
+  position:fixed;
+  bottom:26px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:24px;
+  font-size:13px;
+  opacity:.8;
+  z-index:20;
 }
+
+#controls button{
+  background:none;
+  border:none;
+  color:inherit;
+  cursor:pointer;
+}
+#controls button:hover{text-decoration:underline}
 </style>
 </head>
 
 <body>
 
 <div id="stage">
+  <div id="world">
 
-  <!-- SCENE 1 -->
-  <div id="scene1" class="scene">
-    <div class="content">
-      <h1>Sai tenere un segreto?</h1>
-      <div class="artist">DavideKra</div>
+    <!-- SCENE 1 -->
+    <div id="scene1" class="scene">
+      <div class="content">
+        <h1>Sai tenere un segreto?</h1>
+        <div class="artist">DavideKra</div>
+      </div>
+      <div id="karaoke">
+        <div id="line"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- SCENE 2 -->
-  <div id="scene2" class="scene">
-    <div class="content">
-      <h1>2 Cose Insieme</h1>
-      <div class="artist">DavideKra</div>
-      <div class="play">play</div>
+    <!-- SCENE 2 -->
+    <div id="scene2" class="scene">
+      <div class="content">
+        <h1>2 Cose Insieme</h1>
+        <div class="artist">DavideKra</div>
+        <div class="play">play</div>
+      </div>
     </div>
-  </div>
 
+  </div>
+</div>
+
+<!-- AUDIO -->
+<audio id="audio" preload="metadata">
+  <source src="DavideKra - 02 - Sai Tenere Un Segreto.mp3" type="audio/mpeg">
+  <track id="lyricsTrack" kind="subtitles" srclang="it"
+         src="DavideKra - 02 - Sai Tenere Un Segreto.vtt" default>
+</audio>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <button id="back">−10s</button>
+  <button id="play">play</button>
+  <button id="forward">+10s</button>
 </div>
 
 <script>
-let progress = 0;            // 0 → 1
-let activeScene = 1;
-const scene1 = document.getElementById("scene1");
-const scene2 = document.getElementById("scene2");
+/* =====================
+   SCROLL ALBUM (CAMERA)
+   ===================== */
+let cameraZ = 0;
+const world = document.getElementById("world");
+const SCENE_DEPTH = 1200;
 
-window.addEventListener("wheel", (e)=>{
+window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-
-  if(activeScene !== 1) return;
-
-  // scroll forward only
-  progress += Math.max(0, e.deltaY) * 0.0009;
-  progress = Math.min(progress, 1);
-
-  // Scene 1 viene verso di te e scompare
-  const z1 = progress * 1400;
-  const scale1 = 1 + progress * 0.4;
-  scene1.style.transform = `translateZ(${z1}px) scale(${scale1})`;
-  scene1.style.opacity = 1 - progress * 1.2;
-
-  // Scene 2 emerge da dietro
-  const z2 = -1200 + progress * 1200;
-  const scale2 = 0.7 + progress * 0.3;
-  scene2.style.transform = `translateZ(${z2}px) scale(${scale2})`;
-  scene2.style.opacity = progress;
-
-  if(progress >= 1){
-    activeScene = 2;
-    scene1.style.display = "none";
-  }
+  cameraZ += e.deltaY * 0.8;
+  cameraZ = Math.max(-SCENE_DEPTH, Math.min(0, cameraZ));
+  world.style.transform = `translateZ(${cameraZ}px)`;
 },{passive:false});
+
+/* =====================
+   AUDIO / PLAYER
+   ===================== */
+const audio = document.getElementById("audio");
+const playBtn = document.getElementById("play");
+document.getElementById("back").onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
+document.getElementById("forward").onclick=()=>audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
+
+playBtn.onclick=()=>{
+  if(audio.paused){audio.play();playBtn.textContent="pause";}
+  else{audio.pause();playBtn.textContent="play";}
+};
+
+/* =====================
+   KARAOKE
+   ===================== */
+const trackEl=document.getElementById("lyricsTrack");
+const line=document.getElementById("line");
+let lastCue=null;
+
+trackEl.addEventListener("load",()=>{
+  const track=trackEl.track;
+  track.mode="hidden";
+
+  const refresh=()=>{
+    const a=track.activeCues;
+    if(!a||!a.length){line.style.opacity=0;return;}
+    const cue=a[0];
+    if(cue===lastCue)return;
+    lastCue=cue;
+
+    line.style.opacity=0;
+    setTimeout(()=>{
+      line.textContent=cue.text;
+      line.style.opacity=1;
+    },200);
+  };
+
+  track.addEventListener("cuechange",refresh);
+  audio.addEventListener("timeupdate",refresh);
+});
 </script>
 
 </body>
