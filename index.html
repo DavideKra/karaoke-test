@@ -5,17 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Davide*Kra — Album 3D</title>
 
-<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
+:root{
+  --hudBg: rgba(0,0,0,.28);
+  --hudBd: rgba(255,255,255,.12);
+  --hudTx: rgba(255,255,255,.86);
+  --hudTx2: rgba(255,255,255,.70);
+}
 
 /* ===== STAGE ===== */
 #stage{
   position:fixed; inset:0;
-  perspective:1600px;
+  perspective:1700px;
   overflow:hidden;
 }
 #world{position:absolute; inset:0; transform-style:preserve-3d;}
@@ -25,14 +30,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
   transform-style:preserve-3d;
-  transition:opacity .25s ease;
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
   will-change:transform,opacity;
 }
-
-/* overlay */
 .scene::before{
   content:"";
   position:absolute; inset:0;
@@ -41,12 +43,11 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
 }
 .scene > *{position:relative; z-index:2}
 
-/* ===== META ===== */
 .meta{
   text-align:center;
-  transition:opacity .35s ease, transform .35s ease, filter .35s ease;
   pointer-events:none;
   max-width:86vw;
+  transition:opacity .35s ease, transform .35s ease, filter .35s ease;
 }
 .meta .title{
   margin:0;
@@ -59,18 +60,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   opacity:.72;
   text-shadow:0 10px 36px rgba(0,0,0,.9);
 }
-
-/* meta sparisce SOLO sulla scena della traccia che sta suonando */
 .scene.is-playing .meta{
   opacity:0;
   transform:translateY(-6px);
-  filter:blur(.4px);
+  filter:blur(.6px);
 }
 
-/* ===== STILI ===== */
+/* Stili titoli */
 .scene[data-style="thriller"] .meta .title{
   font-family:"Rubik Dirt", cursive;
-  letter-spacing:.3px;
+  letter-spacing:.25px;
 }
 .scene[data-style="normale"] .meta .title{
   font-family:"Roboto", system-ui, sans-serif;
@@ -80,39 +79,85 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
 .scene[data-style="amore"] .meta .title{
   font-family:"Playfair Display", serif;
   font-weight:700;
-  letter-spacing:.15px;
+  letter-spacing:.12px;
 }
 
-/* ===== HUD (hashtag) ===== */
+/* ===== HUD ===== */
 #hud{
   position:fixed;
   top:18px; right:18px;
-  z-index:30;
+  z-index:40;
   font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
-  color:rgba(255,255,255,.85);
-  background:rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.12);
+  color:var(--hudTx);
+  background:var(--hudBg);
+  border:1px solid var(--hudBd);
   padding:10px 12px;
   border-radius:12px;
   backdrop-filter: blur(8px);
   user-select:none;
 }
-#hud .hash{
-  font-weight:700;
-  letter-spacing:.25px;
-}
-#hud .hint{
-  margin-top:6px;
-  font-size:11.5px;
-  opacity:.7;
-}
+#hud .hash{font-weight:800; letter-spacing:.25px}
+#hud .hint{margin-top:6px; font-size:11.5px; opacity:.74}
 
-/* ===== KARAOKE ===== */
+/* ===== Mini-map ===== */
+#minimap{
+  position:fixed;
+  right:20px;
+  top:92px;
+  z-index:40;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:12px 10px;
+  border-radius:14px;
+  background:var(--hudBg);
+  border:1px solid var(--hudBd);
+  backdrop-filter: blur(8px);
+}
+.mm-dot{
+  width:10px; height:10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.12);
+  cursor:pointer;
+  position:relative;
+}
+.mm-dot:hover{background:rgba(255,255,255,.22)}
+.mm-dot.active{
+  background:rgba(255,255,255,.9);
+  border-color:rgba(255,255,255,.9);
+}
+.mm-dot.playing::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.35);
+  opacity:.65;
+}
+.mm-label{
+  position:absolute;
+  right:18px;
+  top:50%;
+  transform:translateY(-50%);
+  white-space:nowrap;
+  font: 12px/1.2 "Roboto", system-ui, sans-serif;
+  color:rgba(255,255,255,.85);
+  background:rgba(0,0,0,.40);
+  border:1px solid rgba(255,255,255,.10);
+  padding:6px 8px;
+  border-radius:10px;
+  opacity:0;
+  pointer-events:none;
+}
+.mm-dot:hover .mm-label{opacity:1}
+
+/* ===== Karaoke ===== */
 #karaoke{
   position:fixed; inset:0;
   display:flex; align-items:center; justify-content:center;
   pointer-events:none;
-  z-index:15;
+  z-index:25;
   padding:40px;
 }
 #line{
@@ -120,17 +165,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   text-align:center;
   line-height:1.25;
   opacity:0;
-  transition:opacity .22s ease, transform .35s ease, filter .35s ease;
+  transition:opacity .18s ease, transform .32s ease, filter .32s ease;
   text-shadow:0 12px 44px rgba(0,0,0,.95);
   font-size:clamp(30px,5vw,58px);
 }
-
-/* Font testo per stile (normale = Roboto) */
+/* Font testo per stile */
 body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; }
 body[data-active-style="normale"]  #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
 body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
 
-/* ===== TRANSITIONS ===== */
+/* Transitions (set) */
 .t-fade-in   { transform:none; filter:none; }
 .t-pop       { transform:scale(1.08); filter:none; }
 .t-slide-up  { transform:translateY(40px); filter:none; }
@@ -143,22 +187,21 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 .t-snap      { transform:scale(.92); filter:contrast(1.2); }
 .t-jitter    { transform:translateX(-6px) rotate(.8deg); filter:none; }
 
-/* ===== PLAYER ===== */
-#audio{display:none}
+/* ===== Player ===== */
+#audioA,#audioB{display:none}
 
 #playerTitle{
   position:fixed;
   bottom:56px;
   left:50%;
   transform:translateX(-50%);
-  z-index:22;
+  z-index:32;
   font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
-  color:rgba(255,255,255,.85);
+  color:rgba(255,255,255,.86);
   opacity:.9;
   user-select:none;
   text-shadow:0 10px 28px rgba(0,0,0,.9);
 }
-
 #controls{
   position:fixed;
   bottom:26px;
@@ -168,7 +211,7 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
   gap:24px;
   font: 13px/1.2 "Roboto", system-ui, sans-serif;
   opacity:.86;
-  z-index:20;
+  z-index:31;
   user-select:none;
 }
 #controls button{
@@ -180,7 +223,7 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 }
 #controls button:hover{ color:#fff; text-decoration:underline; }
 
-/* ===== BREATH (bpm-driven) ===== */
+/* ===== Breathing ===== */
 @keyframes bgPump{
   0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
   50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
@@ -201,13 +244,16 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 
 <div id="hud">
   <div class="hash" id="hash">#</div>
-  <div class="hint">Scroll = cambia scena • Play = avvia qui</div>
+  <div class="hint">Scroll = scene • Shift+Scroll = scrub • Play = qui</div>
 </div>
+
+<div id="minimap" aria-label="Album map"></div>
 
 <div id="stage"><div id="world"></div></div>
 <div id="karaoke"><div id="line"></div></div>
 
-<audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
+<audio id="audioA" preload="metadata" crossorigin="anonymous"></audio>
+<audio id="audioB" preload="metadata" crossorigin="anonymous"></audio>
 
 <div id="playerTitle">—</div>
 <div id="controls">
@@ -217,303 +263,427 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 </div>
 
 <script>
-/* =========================================================
-   TRACKLIST
-   ========================================================= */
+/* =========================
+   TRACKS
+   ========================= */
 const tracks = [
   {
-    artist: "Davide*Kra",
-    title: "In Throw",
-    bpm: 90,
-    style: "normale",
-    cover: "https://i.ibb.co/9mtLF0JV/In-Throw.png",
-    audio: "DavideKra - 01 - In Throw.mp3",
-    vtt:   "DavideKra - 01 - In Throw.vtt"
+    artist:"Davide*Kra",
+    title:"In Throw",
+    bpm:90,
+    style:"normale",
+    cover:"https://i.ibb.co/9mtLF0JV/In-Throw.png",
+    audio:"DavideKra - 01 - In Throw.mp3",
+    vtt:"DavideKra - 01 - In Throw.vtt"
   },
   {
-    artist: "Davide*Kra",
-    title: "Sai Tenere Un Segreto?",
-    bpm: 126,
-    style: "thriller",
-    cover: "https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
-    audio: "DavideKra - 02 - Sai Tenere Un Segreto.mp3",
-    vtt:   "DavideKra - 02 - Sai Tenere Un Segreto.vtt"
+    artist:"Davide*Kra",
+    title:"Sai Tenere Un Segreto?",
+    bpm:126,
+    style:"thriller",
+    cover:"https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
+    audio:"DavideKra - 02 - Sai Tenere Un Segreto.mp3",
+    vtt:"DavideKra - 02 - Sai Tenere Un Segreto.vtt"
   },
   {
-    artist: "Davide*Kra",
-    title: "2 cose insieme",
-    bpm: 91,
-    style: "normale",
-    cover: "https://i.ibb.co/yndKknVM/2-cose-insieme.png",
-    audio: "DavideKra - 03 - 2 Cose Insieme.mp3",
-    vtt:   "DavideKra - 03 - 2 Cose Insieme.vtt"
+    artist:"Davide*Kra",
+    title:"2 cose insieme",
+    bpm:91,
+    style:"normale",
+    cover:"https://i.ibb.co/yndKknVM/2-cose-insieme.png",
+    audio:"DavideKra - 03 - 2 Cose Insieme.mp3",
+    vtt:"DavideKra - 03 - 2 Cose Insieme.vtt"
   }
 ];
 
-/* =========================================================
-   STYLE PRESETS
-   ========================================================= */
 const STYLE = {
-  thriller: {
-    transitions: ["t-blur","t-rotate","t-jitter","t-snap","t-slide-up","t-slide-down","t-pop","t-stretch","t-fade-in"],
-    breatheAmp: 1.10
-  },
-  normale: {
-    transitions: ["t-fade-in","t-slide-up","t-slide-down","t-pop","t-slide-left","t-slide-right","t-snap"],
-    breatheAmp: 1.00
-  },
-  amore: {
-    transitions: ["t-fade-in","t-pop","t-slide-up","t-slide-right","t-slide-left","t-snap","t-stretch"],
-    breatheAmp: 0.95
-  }
+  thriller: { transitions:["t-blur","t-rotate","t-jitter","t-snap","t-slide-up","t-slide-down","t-pop","t-stretch","t-fade-in"], breatheAmp:1.10 },
+  normale:  { transitions:["t-fade-in","t-slide-up","t-slide-down","t-pop","t-slide-left","t-slide-right","t-snap"], breatheAmp:1.00 },
+  amore:    { transitions:["t-fade-in","t-pop","t-slide-up","t-slide-right","t-slide-left","t-snap","t-stretch"], breatheAmp:0.95 }
 };
 
-function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 function bpmToBreath(bpm, styleKey){
   const s = STYLE[styleKey] || STYLE.normale;
-
-  let dur = 120 / Math.max(40, bpm);
-  dur = clamp(dur, 0.75, 2.2);
-
+  let dur = 120 / Math.max(40, bpm);   // più bpm = più veloce
+  dur = clamp(dur, 0.70, 2.1);
   let amp = 1.06 + (bpm - 70) * 0.0015;
   amp = clamp(amp, 1.06, 1.22) * s.breatheAmp;
-  amp = clamp(amp, 1.06, 1.28);
-
+  amp = clamp(amp, 1.06, 1.30);
   return { dur, amp };
 }
-
 function pickTransition(styleKey){
-  const set = (STYLE[styleKey] || STYLE.normale).transitions;
+  const set=(STYLE[styleKey]||STYLE.normale).transitions;
   return set[(Math.random()*set.length)|0];
 }
-
-/* =========================================================
-   HELPERS: hashtag
-   ========================================================= */
 function toHashTag(title){
-  // rimuove spazi e simboli, lascia lettere/numeri
-  const clean = (title || "")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // no accenti
-    .replace(/[^a-zA-Z0-9]+/g, " ")                   // separatori
+  const clean=(title||"")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-zA-Z0-9]+/g," ")
     .trim()
     .split(/\s+/)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .map(w=>w.charAt(0).toUpperCase()+w.slice(1))
     .join("");
-  return "#" + (clean || "Track");
+  return "#"+(clean||"Track");
 }
 
-/* =========================================================
-   CREATE SCENES
-   ========================================================= */
-const world = document.getElementById("world");
-
-/* più spazio tra tracce = più profondità */
-const SCENE_DEPTH = 1700; // prima era ~1200
-
+/* =========================
+   SCENES + DEPTH (più spazio)
+   ========================= */
+const world=document.getElementById("world");
+const SCENE_DEPTH = 2100; // più profondità rispetto a prima
 const scenes = tracks.map((t,i)=>{
-  const s = document.createElement("div");
-  s.className = "scene";
-  s.dataset.style = t.style;
-  s.style.backgroundImage = `url("${t.cover}")`;
-
-  s.innerHTML = `
+  const el=document.createElement("div");
+  el.className="scene";
+  el.dataset.style=t.style;
+  el.style.backgroundImage=`url("${t.cover}")`;
+  el.innerHTML=`
     <div class="meta">
       <div class="title">${t.title}</div>
       <div class="artist">${t.artist}</div>
-    </div>
-  `;
-  world.appendChild(s);
-  return { el:s, z:-i*SCENE_DEPTH, track:t, index:i };
+    </div>`;
+  world.appendChild(el);
+  return { el, z:-i*SCENE_DEPTH, track:t, index:i };
+});
+const MAX_Z = SCENE_DEPTH * (tracks.length-1);
+
+/* =========================
+   MINI-MAP
+   ========================= */
+const minimap=document.getElementById("minimap");
+const dots = scenes.map((s,i)=>{
+  const d=document.createElement("div");
+  d.className="mm-dot";
+  d.title=s.track.title;
+  d.innerHTML=`<div class="mm-label">${s.track.title}</div>`;
+  d.addEventListener("click", ()=> {
+    targetZ = i*SCENE_DEPTH;
+    targetZ = clamp(targetZ, 0, MAX_Z);
+    snapArmed = false; // click è già uno snap
+  });
+  minimap.appendChild(d);
+  return d;
 });
 
-/* =========================================================
-   CAMERA SCROLL
-   ========================================================= */
-let cameraZ = 0;
-let activeIndex = 0;
+/* =========================
+   HUD + playerTitle
+   ========================= */
+const hashEl=document.getElementById("hash");
+const playerTitle=document.getElementById("playerTitle");
+function updateHUD(){
+  const t=scenes[activeIndex].track;
+  hashEl.textContent=toHashTag(t.title);
+  playerTitle.textContent=`${t.artist} — ${t.title}`;
+}
 
-const MAX_Z = SCENE_DEPTH * (tracks.length - 1);
-const SPEED = 0.9;
+/* =========================
+   CAMERA: INERZIA + SNAP MAGNETICO (1)
+   ========================= */
+let cameraZ=0;
+let targetZ=0;
+let activeIndex=0;
 
-function computeActiveIndex(){
+const SPEED = 0.95;
+let snapTimer=null;
+let snapArmed=false;
+
+function computeActiveIndex(zVal){
   let bestI=0, bestD=Infinity;
-  for (let i=0;i<scenes.length;i++){
-    const rz = scenes[i].z + cameraZ;
+  for(let i=0;i<scenes.length;i++){
+    const rz = scenes[i].z + zVal;
     const d = Math.abs(rz);
-    if(d < bestD){ bestD=d; bestI=i; }
+    if(d<bestD){ bestD=d; bestI=i; }
   }
   return bestI;
 }
 
-window.addEventListener("wheel",(e)=>{
-  e.preventDefault();
-  cameraZ = clamp(cameraZ + e.deltaY * SPEED, 0, MAX_Z);
-  updateScenes();
-},{passive:false});
+function armSnap(){
+  snapArmed = true;
+  if(snapTimer) clearTimeout(snapTimer);
+  snapTimer = setTimeout(()=>{
+    if(!snapArmed) return;
+    const nearest = Math.round(targetZ / SCENE_DEPTH) * SCENE_DEPTH;
+    targetZ = clamp(nearest, 0, MAX_Z);
+  }, 140);
+}
 
-/* =========================================================
-   AUDIO + KARAOKE
-   ========================================================= */
-const audio = document.getElementById("audio");
-const playBtn = document.getElementById("play");
-const line = document.getElementById("line");
-const hashEl = document.getElementById("hash");
-const playerTitle = document.getElementById("playerTitle");
+/* =========================
+   AUDIO ENGINE: TRUE CROSSFADE (3)
+   due audio elements + WebAudio gains
+   ========================= */
+const audioA=document.getElementById("audioA");
+const audioB=document.getElementById("audioB");
+const audios=[audioA, audioB];
 
-let currentTrackIndex = null; // traccia effettivamente in riproduzione/caricata
-let trackEl = null;
-let lastCue = null;
-let karaokeBoundToIndex = null; // quale traccia ha attualmente i cue agganciati
+let audioCtx=null, srcA=null, srcB=null, gA=null, gB=null;
+let currentPlayer=0;      // quale audio sta suonando ora (0/1)
+let playingIndex=null;    // quale traccia sta suonando
+let vttSession=0;         // guard per evitare flash old events
+let currentTrackEl=null;  // track element attuale (sul player attivo)
 
-function clearKaraoke(){
-  lastCue = null;
-  karaokeBoundToIndex = null;
-  line.style.opacity = 0;
-  line.textContent = "";
-  if(trackEl){
-    try{ trackEl.remove(); }catch(e){}
-    trackEl = null;
-  }
+const playBtn=document.getElementById("play");
+const line=document.getElementById("line");
+
+function ensureAudioGraph(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // create sources once (per element) — Safari: deve essere dopo gesto utente
+  srcA = audioCtx.createMediaElementSource(audioA);
+  srcB = audioCtx.createMediaElementSource(audioB);
+  gA = audioCtx.createGain();
+  gB = audioCtx.createGain();
+  gA.gain.value = 1;
+  gB.gain.value = 0;
+  srcA.connect(gA).connect(audioCtx.destination);
+  srcB.connect(gB).connect(audioCtx.destination);
 }
 
 function setActiveStyle(styleKey){
   document.body.dataset.activeStyle = styleKey || "normale";
 }
 
-function loadTrack(index){
-  const t = scenes[index].track;
-  if(currentTrackIndex === index && audio.src) return;
+function clearKaraoke(){
+  vttSession++;
+  line.style.opacity=0;
+  line.textContent="";
+  if(currentTrackEl){
+    try{ currentTrackEl.remove(); }catch(e){}
+    currentTrackEl = null;
+  }
+}
 
-  clearKaraoke();
-  currentTrackIndex = index;
+function bindKaraokeTo(playerEl, trackObj, boundIndex){
+  clearKaraoke(); // increment session + remove old track
+  const mySession = vttSession;
 
-  audio.src = t.audio;
-  setActiveStyle(t.style);
+  // create new <track>
+  const tr=document.createElement("track");
+  tr.kind="subtitles";
+  tr.srclang="it";
+  tr.label="lyrics";
+  tr.src=trackObj.vtt;
+  tr.default=true;
+  playerEl.appendChild(tr);
+  currentTrackEl = tr;
 
-  trackEl = document.createElement("track");
-  trackEl.kind = "subtitles";
-  trackEl.srclang = "it";
-  trackEl.label = "lyrics";
-  trackEl.src = t.vtt;
-  trackEl.default = true;
-  audio.appendChild(trackEl);
+  tr.addEventListener("load", ()=>{
+    if(mySession !== vttSession) return;
+    const tt = tr.track;
+    tt.mode="hidden";
+    let lastCue=null;
 
-  trackEl.addEventListener("load",()=>{
-    const tt = trackEl.track;
-    tt.mode = "hidden";
-    karaokeBoundToIndex = index;
+    const refresh=()=>{
+      // guard: evita flash di eventi vecchi
+      if(mySession !== vttSession) return;
 
-    const refresh = ()=>{
-      // IMPORTANTISSIMO:
-      // testo visibile SOLO se stai guardando lo "spicchio" della traccia in play
-      if (activeIndex !== currentTrackIndex){
-        line.style.opacity = 0;
-        return;
-      }
+      // regola richiesta: testo SOLO se
+      // - sto guardando lo spicchio del brano in play
+      // - quel brano sta suonando (non in pausa)
+      if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
+      if(getCurrentAudio().paused) { line.style.opacity=0; return; }
+
       const a = tt.activeCues;
-      if(!a || !a.length){
-        line.style.opacity = 0;
-        return;
-      }
-      const cue = a[0];
-      if(cue === lastCue) return;
-      lastCue = cue;
+      if(!a || !a.length){ line.style.opacity=0; return; }
 
-      const tr = pickTransition(t.style);
-      line.className = tr;
+      const cue=a[0];
+      if(cue===lastCue) return;
+      lastCue=cue;
+
+      const trClass = pickTransition(trackObj.style);
+      line.className = trClass;
       line.style.opacity = 0;
 
       setTimeout(()=>{
-        // ricontrolla dopo il delay (se nel frattempo hai scrollato)
-        if (activeIndex !== currentTrackIndex){
-          line.style.opacity = 0;
-          return;
-        }
+        if(mySession !== vttSession) return;
+        if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
+        if(getCurrentAudio().paused) { line.style.opacity=0; return; }
         line.textContent = cue.text;
         line.className = "t-fade-in";
         line.style.opacity = 1;
-      }, 160);
+      }, 150);
     };
 
     tt.addEventListener("cuechange", refresh);
-    audio.addEventListener("timeupdate", refresh);
+    playerEl.addEventListener("timeupdate", refresh);
+    playerEl.addEventListener("seeked", ()=>{ lastCue=null; refresh(); });
+    refresh();
   });
 }
 
-function updatePlayingMeta(){
+function getCurrentAudio(){ return audios[currentPlayer]; }
+function getOtherAudio(){ return audios[1-currentPlayer]; }
+function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
+function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
+
+function updatePlayingUI(){
+  playBtn.textContent = (playingIndex !== null && !getCurrentAudio().paused) ? "pause" : "play";
+
   scenes.forEach((s,i)=>{
-    const isPlayingThis = (!audio.paused) && (currentTrackIndex === i);
-    s.el.classList.toggle("is-playing", isPlayingThis);
+    s.el.classList.toggle("is-playing", (playingIndex===i && playingIndex!==null && !getCurrentAudio().paused));
   });
+  dots.forEach((d,i)=>{
+    d.classList.toggle("active", i===activeIndex);
+    d.classList.toggle("playing", i===playingIndex && playingIndex!==null && !getCurrentAudio().paused);
+  });
+  setBreathing();
 }
 
 function setBreathing(){
   scenes.forEach((s,i)=>{
-    const should = (!audio.paused) && (currentTrackIndex === i) && (activeIndex === i);
+    const should = (playingIndex===i) && (activeIndex===i) && (playingIndex!==null) && !getCurrentAudio().paused;
     s.el.classList.toggle("breathing", should);
-
     if(should){
-      const { dur, amp } = bpmToBreath(s.track.bpm, s.track.style);
+      const {dur, amp} = bpmToBreath(s.track.bpm, s.track.style);
       s.el.style.setProperty("--breatheDur", `${dur}s`);
       s.el.style.setProperty("--breatheScale", `${amp}`);
     }
   });
 }
 
-function updateHUD(){
-  const t = scenes[activeIndex].track;
-  hashEl.textContent = toHashTag(t.title);
-  playerTitle.textContent = `${t.artist} — ${t.title}`;
-}
+async function playOrToggle(){
+  ensureAudioGraph();
+  await audioCtx.resume();
 
-/* audio events */
-audio.addEventListener("play", ()=>{ playBtn.textContent="pause"; updatePlayingMeta(); setBreathing(); });
-audio.addEventListener("pause", ()=>{ playBtn.textContent="play"; updatePlayingMeta(); setBreathing(); });
-audio.addEventListener("ended", ()=>{ playBtn.textContent="play"; updatePlayingMeta(); clearKaraoke(); setBreathing(); line.style.opacity = 0; });
+  const wantIndex = activeIndex;
+  const want = scenes[wantIndex].track;
 
-/* play button behavior */
-playBtn.addEventListener("click", async ()=>{
-  const t = scenes[activeIndex].track;
-  if(!t.audio || !t.vtt) return;
-
-  if(audio.paused){
-    loadTrack(activeIndex);
-    await audio.play();
+  // se niente sta suonando: carica e play sul current player
+  if(playingIndex === null){
+    playingIndex = wantIndex;
+    const a = getCurrentAudio();
+    a.src = want.audio;
+    a.load();
+    setActiveStyle(want.style);
+    bindKaraokeTo(a, want, wantIndex);
+    await a.play();
+    updatePlayingUI();
     return;
   }
 
-  // se sta suonando:
-  // - stessa traccia -> pausa
-  // - traccia diversa -> switch e continua
-  if(currentTrackIndex === activeIndex){
-    audio.pause();
-    clearKaraoke();
-    line.style.opacity = 0;
-  } else {
-    loadTrack(activeIndex);
-    await audio.play();
+  // se sto sulla stessa traccia: toggle play/pause
+  if(playingIndex === wantIndex){
+    const a = getCurrentAudio();
+    if(a.paused){
+      await a.play();
+    } else {
+      a.pause();
+      line.style.opacity=0;
+    }
+    updatePlayingUI();
+    return;
   }
-});
 
-/* seek */
+  // altrimenti: CROSSFADE su altra traccia
+  await crossfadeTo(wantIndex);
+}
+
+async function crossfadeTo(nextIndex){
+  const FADE = 1.15; // sec (puoi alzarlo/abbassarlo)
+  const prevIndex = playingIndex;
+  const prevAudio = getCurrentAudio();
+  const nextAudio = getOtherAudio();
+  const prevGain = getCurrentGain();
+  const nextGain = getOtherGain();
+
+  const next = scenes[nextIndex].track;
+
+  // prepara nuovo audio
+  playingIndex = nextIndex;
+  setActiveStyle(next.style);
+
+  nextAudio.pause();
+  nextAudio.currentTime = 0;
+  nextAudio.src = next.audio;
+  nextAudio.load();
+
+  // karaoke si aggancia al player che diventerà attivo
+  bindKaraokeTo(nextAudio, next, nextIndex);
+
+  // avvia nuovo a volume 0
+  nextGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  prevGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  nextGain.gain.setValueAtTime(0, audioCtx.currentTime);
+  prevGain.gain.setValueAtTime(prevGain.gain.value, audioCtx.currentTime);
+
+  await nextAudio.play();
+
+  // fade
+  nextGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + FADE);
+  prevGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
+
+  // dopo fade: spegni vecchio e switch player
+  setTimeout(()=>{
+    try{
+      prevAudio.pause();
+      prevAudio.removeAttribute("src");
+      prevAudio.load();
+    }catch(e){}
+  }, (FADE*1000)+60);
+
+  currentPlayer = 1-currentPlayer;
+  updatePlayingUI();
+}
+
+/* controls */
+document.getElementById("play").addEventListener("click", playOrToggle);
 document.getElementById("back").addEventListener("click", ()=>{
-  audio.currentTime = Math.max(0, audio.currentTime - 10);
+  const a = (playingIndex===null) ? getCurrentAudio() : getCurrentAudio();
+  a.currentTime = Math.max(0, (a.currentTime||0) - 10);
 });
 document.getElementById("forward").addEventListener("click", ()=>{
-  audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+  const a = (playingIndex===null) ? getCurrentAudio() : getCurrentAudio();
+  a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
 });
 
-/* =========================================================
-   RENDER
-   ========================================================= */
+/* hide lyrics if you're not on slice */
+function enforceSliceVisibility(){
+  if(playingIndex === null){ line.style.opacity=0; return; }
+  if(activeIndex !== playingIndex){ line.style.opacity=0; return; }
+  if(getCurrentAudio().paused){ line.style.opacity=0; return; }
+}
+
+/* =========================
+   SHIFT+SCROLL SCRUB (7)
+   ========================= */
+function scrub(deltaY){
+  if(playingIndex === null) return;
+  const a = getCurrentAudio();
+  if(!a || isNaN(a.currentTime)) return;
+  // scrubbing sensibile ma controllabile
+  // 1 "notch" tipico ~100 => 2.0s
+  const seconds = (deltaY / 100) * 2.0;
+  a.currentTime = clamp(a.currentTime + seconds, 0, (a.duration||a.currentTime+10));
+  enforceSliceVisibility();
+}
+
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+
+  // Shift+Scroll = scrub tempo della traccia in play
+  if(e.shiftKey){
+    scrub(e.deltaY);
+    return;
+  }
+
+  // scroll normale = navigazione scene
+  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z);
+  armSnap();
+},{passive:false});
+
+/* =========================
+   RENDER LOOP (camera easing + snap)
+   ========================= */
 function updateScenes(){
-  scenes.forEach((s)=>{
+  activeIndex = computeActiveIndex(cameraZ);
+
+  // transforms
+  for(const s of scenes){
     const rz = s.z + cameraZ;
     const dist = Math.abs(rz);
-
-    const t = clamp(1 - (dist / SCENE_DEPTH), 0, 1);
-    const scale = 0.70 + t * 0.30;     // un filo più “cinema”
+    const t = clamp(1 - (dist/SCENE_DEPTH), 0, 1);
+    const scale = 0.70 + t*0.30;
     const opacity = t;
 
     s.el.style.setProperty("--rz", `${rz}px`);
@@ -523,23 +693,29 @@ function updateScenes(){
       s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
     }
     s.el.style.opacity = opacity.toFixed(3);
-  });
-
-  activeIndex = computeActiveIndex();
-
-  // (1) testo SOLO nello spicchio
-  if (activeIndex !== currentTrackIndex){
-    line.style.opacity = 0;
   }
 
-  // (2) HUD + player title
   updateHUD();
-
-  // (3) respiro legato a scena attiva
-  setBreathing();
+  updatePlayingUI();
+  enforceSliceVisibility();
 }
 
+function tick(){
+  // easing
+  const diff = (targetZ - cameraZ);
+  cameraZ += diff * 0.12; // feel
+  if(Math.abs(diff) < 0.35) cameraZ = targetZ;
+
+  updateScenes();
+  requestAnimationFrame(tick);
+}
+
+/* init */
+targetZ = 0;
+cameraZ = 0;
+updateHUD();
 updateScenes();
+requestAnimationFrame(tick);
 </script>
 
 </body>
