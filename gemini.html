@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Davide*Kra — Album 3D Premium</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
+:root{
+  --hudBg: rgba(0,0,0,.4);
+  --hudBd: rgba(255,255,255,.15);
+  --hudTx: rgba(255,255,255,.9);
+}
+
+/* ===== CANVAS BG ===== */
+#bg-canvas {
+  position: fixed; inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== STAGE ===== */
+#stage{
+  position:fixed; inset:0;
+  perspective:1800px; /* Profondità aumentata leggermente */
+  overflow:hidden;
+  z-index: 10;
+}
+#world{position:absolute; inset:0; transform-style:preserve-3d;}
+
+/* ===== SCENE & REFLECTION ===== */
+.scene{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  transform-style:preserve-3d;
+  background-repeat:no-repeat;
+  background-position:center center;
+  background-size:contain; /* Adatta l'immagine */
+  will-change:transform,opacity;
+}
+/* Gradiente scuro sopra l'immagine per leggibilità */
+.scene::before{
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.8));
+  pointer-events:none;
+  z-index: 1;
+}
+
+/* RIFLESSO (Floor) */
+.scene::after {
+  content: "";
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  height: 100%;
+  background-image: inherit;
+  background-size: inherit;
+  background-position: inherit;
+  background-repeat: no-repeat;
+  transform: scaleY(-1) translateY(-2px); /* Ribalta */
+  transform-origin: top;
+  opacity: 0.4;
+  /* Maschera per sfumare il riflesso */
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.scene > *{position:relative; z-index:2}
+
+/* Animazione THUMP (Snap Impact) */
+@keyframes thumpAnim {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); filter: brightness(1.1); }
+  100% { transform: scale(1); }
+}
+.thump-effect {
+  animation: thumpAnim 0.15s ease-out forwards;
+}
+
+.meta{
+  text-align:center;
+  pointer-events:none;
+  max-width:86vw;
+  transition:opacity .35s ease, transform .35s ease, filter .35s ease;
+  margin-bottom: 40px; /* Spazio per non sovrapporsi troppo al riflesso */
+}
+.meta .title{
+  margin:0;
+  font-size:clamp(40px,7vw,80px);
+  line-height:1.05;
+  text-shadow:0 12px 44px rgba(0,0,0,1);
+}
+.meta .artist{
+  margin-top:12px;
+  font-size: 1.2rem;
+  opacity:.8;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow:0 10px 36px rgba(0,0,0,.9);
+}
+.scene.is-playing .meta{
+  opacity:0;
+  transform:translateY(-10px);
+  filter:blur(4px);
+}
+
+/* Stili titoli */
+.scene[data-style="thriller"] .meta .title{ font-family:"Rubik Dirt", cursive; letter-spacing:.25px; color: #ffcece; }
+.scene[data-style="normale"] .meta .title{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing:-1px; }
+.scene[data-style="amore"] .meta .title{ font-family:"Playfair Display", serif; font-weight:700; font-style: italic; color: #ffe0f0; }
+
+/* ===== HUD (Top Right) ===== */
+#hud{
+  position:fixed;
+  top:20px; right:20px;
+  z-index:40;
+  font: 13px/1.4 "Roboto", sans-serif;
+  color:var(--hudTx);
+  background:var(--hudBg);
+  border:1px solid var(--hudBd);
+  padding:14px 18px;
+  border-radius:12px;
+  backdrop-filter: blur(10px);
+  user-select:none;
+  text-align: right;
+  max-width: 260px;
+}
+#hud .hash{
+  font-weight:900; 
+  font-size: 14px;
+  letter-spacing:1px; 
+  margin-bottom: 4px;
+  color: #fff;
+  text-transform: uppercase;
+}
+#hud .hint{
+  font-size:11px; 
+  opacity:.7;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+/* ===== Mini-map (Always Visible Labels) ===== */
+#minimap{
+  position:fixed;
+  right:20px;
+  top:130px; /* Spostato sotto l'HUD più grande */
+  z-index:40;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  padding:12px 0;
+  /* background rimosso per pulizia, o lasciamo trasparente */
+  align-items: flex-end;
+}
+.mm-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+  group: normal;
+}
+.mm-dot{
+  width:8px; height:8px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.1);
+  transition: all 0.3s ease;
+  margin-left: 12px;
+  position:relative;
+}
+.mm-item:hover .mm-dot { background: #fff; transform: scale(1.2); }
+.mm-item.active .mm-dot {
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+  transform: scale(1.3);
+}
+.mm-item.playing .mm-dot::after {
+  content:""; position:absolute; inset:-6px;
+  border-radius:50%; border:1px solid #fff; opacity:0.6;
+}
+.mm-label{
+  font: 11px "Roboto", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fff;
+  opacity: 0.4; /* Dimmed di default */
+  transition: opacity 0.3s;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+.mm-item:hover .mm-label,
+.mm-item.active .mm-label { opacity: 1; font-weight: 700; }
+
+
+/* ===== Karaoke ===== */
+#karaoke{
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+  z-index:25;
+  padding:40px;
+}
+#line{
+  max-width:1100px;
+  text-align:center;
+  line-height:1.2;
+  opacity:0;
+  transition:opacity .18s ease, transform .32s ease, filter .32s ease;
+  text-shadow:0 12px 44px rgba(0,0,0,1);
+  font-size:clamp(30px,5vw,64px);
+}
+/* Font testo per stile */
+body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; color: #ff4444; }
+body[data-active-style="normale"]  #line{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing: -1px;}
+body[data-active-style="amore"]    #line{ font-family:"Playfair Display", serif; font-weight:700; font-style:italic; }
+
+/* Transitions */
+.t-fade-in    { transform:none; filter:none; }
+.t-pop        { transform:scale(1.08); filter:none; }
+.t-slide-up   { transform:translateY(40px); filter:none; }
+.t-slide-down { transform:translateY(-40px); filter:none; }
+.t-slide-left { transform:translateX(60px); filter:none; }
+.t-slide-right{ transform:translateX(-60px); filter:none; }
+.t-rotate     { transform:rotate(-3deg) scale(.98); filter:none; }
+.t-blur       { transform:none; filter:blur(14px); }
+.t-stretch    { transform:scaleY(.72); filter:none; }
+.t-snap       { transform:scale(.92); filter:contrast(1.2); }
+.t-jitter     { transform:translateX(-6px) rotate(.8deg); filter:none; }
+
+/* ===== Player & Title (Modificato: Sinistra Grande) ===== */
+#playerTitle{
+  position:fixed;
+  bottom: 80px;
+  left: 40px; /* Allineato a sinistra */
+  z-index:32;
+  font: 700 32px/1 "Roboto", sans-serif; /* Più grande */
+  color:#fff;
+  opacity:0; /* Nascosto finché non si suona, o sempre visibile se vuoi. Lo metto fade in */
+  transform: translateY(20px);
+  transition: all 0.5s ease;
+  text-shadow:0 10px 30px rgba(0,0,0,1);
+  letter-spacing: -0.5px;
+}
+#playerTitle.visible { opacity: 1; transform: translateY(0); }
+#playerTitle span {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.6;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#controls{
+  position:fixed;
+  bottom:40px;
+  left:40px; /* Allineato col titolo */
+  display:flex;
+  gap:24px;
+  font: 13px/1.2 "Roboto", sans-serif;
+  opacity:.86;
+  z-index:31;
+  user-select:none;
+}
+#controls button{
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  color:#fff;
+  cursor:pointer;
+  padding:8px 16px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+#controls button:hover{ background: #fff; color:#000; text-decoration:none; }
+
+/* Breathing */
+@keyframes bgPump{
+  0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
+  50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
+  100% { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
+}
+.scene.breathing{
+  animation: bgPump var(--breatheDur, 1.2s) linear infinite;
+}
+
+@media (max-width: 600px) {
+    #hud { display: none; } /* Su mobile nascondiamo info superflue */
+    #playerTitle { font-size: 24px; bottom: 80px; left: 20px; }
+    #controls { left: 20px; }
+}
+</style>
+</head>
+
+<body data-active-style="normale">
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="hud">
+  <div class="hash" id="hash">#</div>
+  <div class="hint">
+    Ruota per scorrere gli album.<br>
+    Clicca i titoli per saltare.<br>
+    <strong>Shift+Scroll</strong> per mandare avanti/indietro la traccia.
+  </div>
+</div>
+
+<div id="minimap" aria-label="Album map"></div>
+
+<div id="stage"><div id="world"></div></div>
+<div id="karaoke"><div id="line"></div></div>
+
+<audio id="audioA" preload="metadata" crossorigin="anonymous"></audio>
+<audio id="audioB" preload="metadata" crossorigin="anonymous"></audio>
+
+<div id="playerTitle">
+    <span id="pt-artist">Davide*Kra</span>
+    <div id="pt-song">Track Name</div>
+</div>
+
+<div id="controls">
+  <button id="back">−10s</button>
+  <button id="play">PLAY</button>
+  <button id="forward">+10s</button>
+</div>
+
+<script>
+/* =========================
+   TRACKS
+   ========================= */
+const tracks = [
+  {
+    artist:"Davide*Kra",
+    title:"In Throw",
+    slug: "in-throw", // per URL pulito
+    bpm:90,
+    style:"normale",
+    cover:"https://i.ibb.co/9mtLF0JV/In-Throw.png",
+    audio:"DavideKra - 01 - In Throw.mp3",
+    vtt:"DavideKra - 01 - In Throw.vtt"
+  },
+  {
+    artist:"Davide*Kra",
+    title:"Sai Tenere Un Segreto?",
+    slug: "segreto",
+    bpm:126,
+    style:"thriller",
+    cover:"https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
+    audio:"DavideKra - 02 - Sai Tenere Un Segreto.mp3",
+    vtt:"DavideKra - 02 - Sai Tenere Un Segreto.vtt"
+  },
+  {
+    artist:"Davide*Kra",
+    title:"2 cose insieme",
+    slug: "2-cose",
+    bpm:91,
+    style:"normale",
+    cover:"https://i.ibb.co/yndKknVM/2-cose-insieme.png",
+    audio:"DavideKra - 03 - 2 Cose Insieme.mp3",
+    vtt:"DavideKra - 03 - 2 Cose Insieme.vtt"
+  }
+];
+
+const STYLE = {
+  thriller: { transitions:["t-blur","t-rotate","t-jitter","t-snap","t-slide-up","t-slide-down","t-pop","t-stretch","t-fade-in"], breatheAmp:1.10 },
+  normale:  { transitions:["t-fade-in","t-slide-up","t-slide-down","t-pop","t-slide-left","t-slide-right","t-snap"], breatheAmp:1.00 },
+  amore:    { transitions:["t-fade-in","t-pop","t-slide-up","t-slide-right","t-slide-left","t-snap","t-stretch"], breatheAmp:0.95 }
+};
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function bpmToBreath(bpm, styleKey){
+  const s = STYLE[styleKey] || STYLE.normale;
+  let dur = 120 / Math.max(40, bpm);
+  dur = clamp(dur, 0.70, 2.1);
+  let amp = 1.06 + (bpm - 70) * 0.0015;
+  amp = clamp(amp, 1.06, 1.22) * s.breatheAmp;
+  amp = clamp(amp, 1.06, 1.30);
+  return { dur, amp };
+}
+function pickTransition(styleKey){
+  const set=(STYLE[styleKey]||STYLE.normale).transitions;
+  return set[(Math.random()*set.length)|0];
+}
+
+/* =========================
+   CANVAS BACKGROUND SYSTEM
+   ========================= */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let cw, ch;
+
+function resizeCanvas(){
+    cw = canvas.width = window.innerWidth;
+    ch = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+    constructor(style) {
+        this.reset(style);
+    }
+    reset(style) {
+        this.style = style;
+        this.x = Math.random() * cw;
+        this.y = Math.random() * ch;
+        this.life = Math.random() * 100;
+        
+        if (style === 'thriller') {
+            // Rain / Static
+            this.vx = (Math.random() - 0.5) * 1;
+            this.vy = 15 + Math.random() * 10; // cade veloce
+            this.size = 1 + Math.random() * 2;
+            this.y = Math.random() * -ch; // start above
+        } else if (style === 'amore') {
+            // Lucciole
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = -0.5 - Math.random(); // sale piano
+            this.size = 2 + Math.random() * 4;
+            this.y = ch + Math.random() * 100; // start below
+        } else {
+            // Normale (Polvere)
+            this.vx = (Math.random() - 0.5) * 0.3;
+            this.vy = (Math.random() - 0.5) * 0.3;
+            this.size = 0.5 + Math.random();
+        }
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Loop screen
+        if(this.style === 'thriller') {
+            if (this.y > ch) this.y = -10;
+        } else if (this.style === 'amore') {
+            if (this.y < -10) this.y = ch + 10;
+            this.x += Math.sin(this.y * 0.02) * 0.2; // Wobbly
+        } else {
+            if (this.x < 0) this.x = cw;
+            if (this.x > cw) this.x = 0;
+            if (this.y < 0) this.y = ch;
+            if (this.y > ch) this.y = 0;
+        }
+    }
+    draw() {
+        ctx.beginPath();
+        if (this.style === 'thriller') {
+            ctx.strokeStyle = `rgba(150,150,150,${0.1 + Math.random()*0.1})`;
+            ctx.lineWidth = 1;
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.vx, this.y + this.vy * 1.5); // Scia
+            ctx.stroke();
+        } else if (this.style === 'amore') {
+            const alpha = 0.2 + Math.abs(Math.sin(Date.now()*0.002 + this.life))*0.3;
+            ctx.fillStyle = `rgba(255, 200, 220, ${alpha})`;
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "pink";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.fillStyle = `rgba(255,255,255,${0.1 + Math.random()*0.2})`;
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+}
+
+// Inizializza particelle
+for(let i=0; i<150; i++) particles.push(new Particle('normale'));
+
+function updateCanvasEffect(newStyle){
+    // Reset parziale per transizione fluida
+    particles.forEach(p => p.reset(newStyle));
+}
+
+function loopCanvas(){
+    ctx.clearRect(0,0,cw,ch);
+    particles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+    requestAnimationFrame(loopCanvas);
+}
+loopCanvas();
+
+
+/* =========================
+   SCENES & WORLD
+   ========================= */
+const world=document.getElementById("world");
+const SCENE_DEPTH = 2200; // Distanza aumentata
+const scenes = tracks.map((t,i)=>{
+  const el=document.createElement("div");
+  el.className="scene";
+  el.dataset.style=t.style;
+  // Background image gestito da CSS
+  el.style.backgroundImage=`url("${t.cover}")`;
+  
+  el.innerHTML=`
+    <div class="meta">
+      <div class="title">${t.title}</div>
+      <div class="artist">${t.artist}</div>
+    </div>`;
+  world.appendChild(el);
+  return { el, z:-i*SCENE_DEPTH, track:t, index:i };
+});
+const MAX_Z = SCENE_DEPTH * (tracks.length-1);
+
+/* =========================
+   MINI-MAP (UI Aggiornata)
+   ========================= */
+const minimap=document.getElementById("minimap");
+const dotItems = scenes.map((s,i)=>{
+  const wrapper = document.createElement("div");
+  wrapper.className = "mm-item";
+  wrapper.innerHTML=`
+    <span class="mm-label">${s.track.title}</span>
+    <div class="mm-dot"></div>
+  `;
+  wrapper.addEventListener("click", ()=> {
+    targetZ = i*SCENE_DEPTH;
+    targetZ = clamp(targetZ, 0, MAX_Z);
+    snapArmed = false; 
+  });
+  minimap.appendChild(wrapper);
+  return wrapper;
+});
+
+/* =========================
+   HUD & DEEP LINKING
+   ========================= */
+const hashEl=document.getElementById("hash");
+const ptSong=document.getElementById("pt-song");
+const ptArtist=document.getElementById("pt-artist");
+const playerTitleBlock=document.getElementById("playerTitle");
+
+function updateHUD(){
+  const t=scenes[activeIndex].track;
+  // Update HUD
+  hashEl.textContent = "#" + t.slug.toUpperCase();
+  
+  // Update Player Title (Left)
+  ptArtist.textContent = t.artist;
+  ptSong.textContent = t.title;
+}
+
+// Deep Linking Logic
+function updateURL(){
+    const t = scenes[activeIndex].track;
+    const hash = "#" + t.slug;
+    if(window.location.hash !== hash) {
+        history.replaceState(null, null, hash);
+    }
+}
+
+/* =========================
+   CAMERA & SNAP
+   ========================= */
+let cameraZ=0;
+let targetZ=0;
+let activeIndex=0;
+let lastActiveIndex = -1;
+
+const SPEED = 0.95;
+let snapTimer=null;
+let snapArmed=false;
+let hasThumped = false; // Flag per il colpo singolo
+
+// Parsing iniziale URL
+window.onload = () => {
+    const hash = window.location.hash.slice(1); // togli #
+    if(hash){
+        const idx = tracks.findIndex(t => t.slug === hash);
+        if(idx >= 0){
+            activeIndex = idx;
+            targetZ = idx * SCENE_DEPTH;
+            cameraZ = targetZ; // salto immediato senza animazione
+        }
+    }
+    updateScenes();
+    updateCanvasEffect(tracks[activeIndex].style);
+    setActiveStyle(tracks[activeIndex].style);
+};
+
+function computeActiveIndex(zVal){
+  let bestI=0, bestD=Infinity;
+  for(let i=0;i<scenes.length;i++){
+    const rz = scenes[i].z + zVal;
+    const d = Math.abs(rz);
+    if(d<bestD){ bestD=d; bestI=i; }
+  }
+  return bestI;
+}
+
+function armSnap(){
+  snapArmed = true;
+  hasThumped = false; // reset thump flag quando ci muoviamo
+  if(snapTimer) clearTimeout(snapTimer);
+  snapTimer = setTimeout(()=>{
+    if(!snapArmed) return;
+    const nearest = Math.round(targetZ / SCENE_DEPTH) * SCENE_DEPTH;
+    targetZ = clamp(nearest, 0, MAX_Z);
+  }, 140);
+}
+
+/* =========================
+   AUDIO ENGINE
+   ========================= */
+const audioA=document.getElementById("audioA");
+const audioB=document.getElementById("audioB");
+const audios=[audioA, audioB];
+
+let audioCtx=null, srcA=null, srcB=null, gA=null, gB=null;
+let currentPlayer=0;
+let playingIndex=null;
+let vttSession=0;
+let currentTrackEl=null;
+
+const playBtn=document.getElementById("play");
+const line=document.getElementById("line");
+
+function ensureAudioGraph(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  srcA = audioCtx.createMediaElementSource(audioA);
+  srcB = audioCtx.createMediaElementSource(audioB);
+  gA = audioCtx.createGain();
+  gB = audioCtx.createGain();
+  gA.gain.value = 1;
+  gB.gain.value = 0;
+  srcA.connect(gA).connect(audioCtx.destination);
+  srcB.connect(gB).connect(audioCtx.destination);
+}
+
+function setActiveStyle(styleKey){
+  document.body.dataset.activeStyle = styleKey || "normale";
+  updateCanvasEffect(styleKey || "normale");
+}
+
+function clearKaraoke(){
+  vttSession++;
+  line.style.opacity=0;
+  line.textContent="";
+  if(currentTrackEl){
+    try{ currentTrackEl.remove(); }catch(e){}
+    currentTrackEl = null;
+  }
+}
+
+function bindKaraokeTo(playerEl, trackObj, boundIndex){
+  clearKaraoke();
+  const mySession = vttSession;
+  const tr=document.createElement("track");
+  tr.kind="subtitles";
+  tr.srclang="it";
+  tr.label="lyrics";
+  tr.src=trackObj.vtt;
+  tr.default=true;
+  playerEl.appendChild(tr);
+  currentTrackEl = tr;
+
+  tr.addEventListener("load", ()=>{
+    if(mySession !== vttSession) return;
+    const tt = tr.track;
+    tt.mode="hidden";
+    let lastCue=null;
+    const refresh=()=>{
+      if(mySession !== vttSession) return;
+      if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
+      if(getCurrentAudio().paused) { line.style.opacity=0; return; }
+      const a = tt.activeCues;
+      if(!a || !a.length){ line.style.opacity=0; return; }
+      const cue=a[0];
+      if(cue===lastCue) return;
+      lastCue=cue;
+      const trClass = pickTransition(trackObj.style);
+      line.className = trClass;
+      line.style.opacity = 0;
+      setTimeout(()=>{
+        if(mySession !== vttSession) return;
+        if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
+        if(getCurrentAudio().paused) { line.style.opacity=0; return; }
+        line.textContent = cue.text;
+        line.className = "t-fade-in";
+        line.style.opacity = 1;
+      }, 150);
+    };
+    tt.addEventListener("cuechange", refresh);
+    playerEl.addEventListener("timeupdate", refresh);
+    playerEl.addEventListener("seeked", ()=>{ lastCue=null; refresh(); });
+    refresh();
+  });
+}
+
+function getCurrentAudio(){ return audios[currentPlayer]; }
+function getOtherAudio(){ return audios[1-currentPlayer]; }
+function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
+function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
+
+function updatePlayingUI(){
+  const isPlaying = (playingIndex !== null && !getCurrentAudio().paused);
+  playBtn.textContent = isPlaying ? "PAUSE" : "PLAY";
+  
+  // Mostra titolo in basso a sx solo se c'è un brano attivo (play o pausa)
+  playerTitleBlock.classList.toggle("visible", playingIndex !== null);
+
+  scenes.forEach((s,i)=>{
+    s.el.classList.toggle("is-playing", (playingIndex===i && isPlaying));
+  });
+  dotItems.forEach((d,i)=>{
+    d.classList.toggle("active", i===activeIndex);
+    d.classList.toggle("playing", i===playingIndex && isPlaying);
+  });
+  setBreathing();
+}
+
+function setBreathing(){
+  scenes.forEach((s,i)=>{
+    const should = (playingIndex===i) && (activeIndex===i) && (playingIndex!==null) && !getCurrentAudio().paused;
+    s.el.classList.toggle("breathing", should);
+    if(should){
+      const {dur, amp} = bpmToBreath(s.track.bpm, s.track.style);
+      s.el.style.setProperty("--breatheDur", `${dur}s`);
+      s.el.style.setProperty("--breatheScale", `${amp}`);
+    }
+  });
+}
+
+async function playOrToggle(){
+  ensureAudioGraph();
+  await audioCtx.resume();
+  const wantIndex = activeIndex;
+  const want = scenes[wantIndex].track;
+
+  if(playingIndex === null){
+    playingIndex = wantIndex;
+    const a = getCurrentAudio();
+    a.src = want.audio;
+    a.load();
+    setActiveStyle(want.style);
+    bindKaraokeTo(a, want, wantIndex);
+    await a.play();
+    updatePlayingUI();
+    return;
+  }
+  if(playingIndex === wantIndex){
+    const a = getCurrentAudio();
+    if(a.paused){ await a.play(); } else { a.pause(); line.style.opacity=0; }
+    updatePlayingUI();
+    return;
+  }
+  await crossfadeTo(wantIndex);
+}
+
+async function crossfadeTo(nextIndex){
+  const FADE = 1.15; 
+  const prevAudio = getCurrentAudio();
+  const nextAudio = getOtherAudio();
+  const prevGain = getCurrentGain();
+  const nextGain = getOtherGain();
+  const next = scenes[nextIndex].track;
+
+  playingIndex = nextIndex;
+  setActiveStyle(next.style);
+
+  nextAudio.pause();
+  nextAudio.currentTime = 0;
+  nextAudio.src = next.audio;
+  nextAudio.load();
+  bindKaraokeTo(nextAudio, next, nextIndex);
+
+  nextGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  prevGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  nextGain.gain.setValueAtTime(0, audioCtx.currentTime);
+  prevGain.gain.setValueAtTime(prevGain.gain.value, audioCtx.currentTime);
+
+  await nextAudio.play();
+  nextGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + FADE);
+  prevGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
+
+  setTimeout(()=>{
+    try{
+      prevAudio.pause();
+      prevAudio.removeAttribute("src");
+      prevAudio.load();
+    }catch(e){}
+  }, (FADE*1000)+60);
+
+  currentPlayer = 1-currentPlayer;
+  updatePlayingUI();
+}
+
+/* controls */
+document.getElementById("play").addEventListener("click", playOrToggle);
+document.getElementById("back").addEventListener("click", ()=>{
+  const a = getCurrentAudio(); a.currentTime = Math.max(0, (a.currentTime||0) - 10);
+});
+document.getElementById("forward").addEventListener("click", ()=>{
+  const a = getCurrentAudio(); a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
+});
+
+function enforceSliceVisibility(){
+  if(playingIndex === null){ line.style.opacity=0; return; }
+  if(activeIndex !== playingIndex){ line.style.opacity=0; return; }
+  if(getCurrentAudio().paused){ line.style.opacity=0; return; }
+}
+
+function scrub(deltaY){
+  if(playingIndex === null) return;
+  const a = getCurrentAudio();
+  if(!a || isNaN(a.currentTime)) return;
+  const seconds = (deltaY / 100) * 2.0;
+  a.currentTime = clamp(a.currentTime + seconds, 0, (a.duration||a.currentTime+10));
+  enforceSliceVisibility();
+}
+
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  if(e.shiftKey){ scrub(e.deltaY); return; }
+  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z);
+  armSnap();
+},{passive:false});
+
+/* =========================
+   RENDER LOOP + THUMP
+   ========================= */
+function updateScenes(){
+  activeIndex = computeActiveIndex(cameraZ);
+
+  // Trigger Style / URL change se cambia scena
+  if(activeIndex !== lastActiveIndex){
+      const t = scenes[activeIndex].track;
+      // Aggiorniamo lo stile solo se non sta suonando un'altra canzone
+      // Oppure se non sta suonando nulla.
+      // Se sta suonando X e navigo su Y, voglio vedere lo stile di Y o X?
+      // Solitamente lo stile visivo segue la navigazione, l'audio rimane.
+      if(playingIndex === null || playingIndex === activeIndex) {
+         setActiveStyle(t.style); 
+      }
+      updateHUD();
+      updateURL(); // Deep link
+      lastActiveIndex = activeIndex;
+  }
+
+  for(const s of scenes){
+    const rz = s.z + cameraZ;
+    const dist = Math.abs(rz);
+    const t = clamp(1 - (dist/SCENE_DEPTH), 0, 1);
+    const scale = 0.70 + t*0.30;
+    const opacity = t; // Fade out distance
+
+    s.el.style.setProperty("--rz", `${rz}px`);
+    s.el.style.setProperty("--scale", `${scale}`);
+
+    if(!s.el.classList.contains("breathing")){
+      s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
+    }
+    // Rimuovi visivamente le scene lontane per performance
+    s.el.style.display = (opacity < 0.05) ? 'none' : 'flex';
+    s.el.style.opacity = opacity.toFixed(3);
+  }
+
+  updatePlayingUI();
+  enforceSliceVisibility();
+}
+
+function triggerThump(sceneIndex){
+    const s = scenes[sceneIndex];
+    if(s && s.el){
+        // Rimuovi classe per poterla riaggiungere
+        s.el.classList.remove("thump-effect");
+        void s.el.offsetWidth; // force reflow
+        s.el.classList.add("thump-effect");
+    }
+}
+
+function tick(){
+  const diff = (targetZ - cameraZ);
+  cameraZ += diff * 0.12; 
+  
+  // Logic Thump: se siamo molto vicini al target e non abbiamo ancora "thumpato"
+  if(!hasThumped && Math.abs(diff) < 20 && Math.abs(targetZ % SCENE_DEPTH) < 10) {
+      triggerThump(activeIndex);
+      hasThumped = true;
+  }
+
+  if(Math.abs(diff) < 0.35) cameraZ = targetZ;
+
+  updateScenes();
+  requestAnimationFrame(tick);
+}
+
+// Mouse Parallax (Tilt) per effetto 3D premium
+let mouseX=0, mouseY=0;
+window.addEventListener("mousemove", e => {
+    mouseX = (e.clientX/window.innerWidth)*2-1;
+    mouseY = (e.clientY/window.innerHeight)*2-1;
+    world.style.transform = `rotateY(${mouseX*5}deg) rotateX(${-mouseY*5}deg)`;
+});
+
+/* Init */
+updateHUD();
+updateScenes();
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>
