@@ -39,13 +39,25 @@ body{
   background-size:contain;
 
   /* più veloce + più ampio */
-  animation:bgZoom 14s cubic-bezier(.4,0,.6,1) infinite;
+  animation:bgPulse 2.4s ease-in-out infinite;
 }
 
-@keyframes bgZoom{
-  0%   { transform:scale(1); }
-  50%  { transform:scale(1.22); }
-  100% { transform:scale(1); }
+@keyframes bgPulse{
+  0%{
+    transform:scale(1);
+  }
+  25%{
+    transform:scale(1.08);
+  }
+  50%{
+    transform:scale(1.14);
+  }
+  75%{
+    transform:scale(1.08);
+  }
+  100%{
+    transform:scale(1);
+  }
 }
 
 /* =====================
