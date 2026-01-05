@@ -6,7 +6,7 @@
 <title>Sai tenere un segreto?</title>
 
 <!-- FONTS -->
-<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@800&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -25,7 +25,7 @@ body{
 }
 
 /* =====================
-   BACKGROUND (ONLY IMAGE MOVES)
+   BACKGROUND (BREATHING)
    ===================== */
 #bg{
   position:fixed;
@@ -37,45 +37,44 @@ body{
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  animation:bgZoom 20s ease-in-out infinite;
+  animation:bgZoom 26s ease-in-out infinite;
 }
 
 @keyframes bgZoom{
   0%{transform:scale(1)}
-  50%{transform:scale(1.06)}
+  50%{transform:scale(1.14)}
   100%{transform:scale(1)}
 }
 
 /* =====================
-   INTRO SCREEN (CLEAN)
+   INTRO (HOME CLEAN)
    ===================== */
 #intro{
   position:fixed;
   inset:0;
+  z-index:10;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
-  text-align:center;
-  z-index:5;
-  background:rgba(0,0,0,.6);
+  background:rgba(0,0,0,.55);
 }
 
 #intro h1{
+  margin-top:64px;
+  margin-bottom:12px;
   font-family:Creepster, cursive;
   font-size:clamp(36px,6vw,72px);
-  margin:0;
+  text-align:center;
 }
 
 #intro .author{
-  margin-top:14px;
-  font-size:15px;
+  font-size:16px;
   color:var(--muted);
 }
 
-/* hint sotto */
-#hint{
-  margin-top:40px;
+#start{
+  margin-top:auto;
+  margin-bottom:64px;
   font-size:14px;
   color:var(--muted);
   cursor:pointer;
@@ -88,16 +87,16 @@ body{
 }
 
 /* =====================
-   STAGE (TEXT ALWAYS VISIBLE)
+   STAGE (KARAOKE)
    ===================== */
 #stage{
   position:fixed;
   inset:0;
+  z-index:20;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:40px;
-  z-index:10;
   pointer-events:none;
 }
 
@@ -110,12 +109,12 @@ body{
   text-shadow:
     0 12px 44px rgba(0,0,0,.95),
     0 0 12px rgba(0,0,0,.7);
-  opacity:1; /* MAI A ZERO */
-  transition:transform .5s ease, filter .5s ease;
+  opacity:0;
+  transition:transform .5s ease, filter .5s ease, opacity .4s ease;
 }
 
 /* =====================
-   PLAYER
+   PLAYER (HIDDEN INIT)
    ===================== */
 #audio{display:none}
 
@@ -124,11 +123,11 @@ body{
   bottom:26px;
   left:50%;
   transform:translateX(-50%);
-  display:flex;
+  display:none; /* nascosto fino al play */
   gap:24px;
   font-size:13px;
   color:var(--muted);
-  z-index:20;
+  z-index:30;
 }
 
 #controls button{
@@ -145,16 +144,16 @@ body{
 }
 
 /* =====================
-   TRANSITIONS (SAFE)
+   TRANSITIONS
    ===================== */
-.fade{transform:none}
-.slide-up{transform:translateY(40px)}
-.slide-down{transform:translateY(-40px)}
-.zoom{transform:scale(1.15)}
-.blur{filter:blur(12px)}
-.rotate{transform:rotate(-2deg) scale(.95)}
-.stretch{transform:scaleY(.6)}
-.slide-x{transform:translateX(-60px)}
+.fade{opacity:1;transform:none}
+.slide-up{opacity:1;transform:translateY(40px)}
+.slide-down{opacity:1;transform:translateY(-40px)}
+.zoom{opacity:1;transform:scale(1.15)}
+.blur{opacity:1;filter:blur(12px)}
+.rotate{opacity:1;transform:rotate(-2deg) scale(.95)}
+.stretch{opacity:1;transform:scaleY(.6)}
+.slide-x{opacity:1;transform:translateX(-60px)}
 </style>
 </head>
 
@@ -166,15 +165,15 @@ body{
 <div id="intro">
   <h1>Sai tenere un segreto?</h1>
   <div class="author">DavideKra</div>
-  <div id="hint">clicca per iniziare</div>
+  <div id="start">clicca per iniziare</div>
 </div>
 
-<!-- TEXT -->
+<!-- KARAOKE -->
 <div id="stage">
-  <div id="line">…</div>
+  <div id="line"></div>
 </div>
 
-<!-- CONTROLS -->
+<!-- PLAYER -->
 <div id="controls">
   <button id="back">−10s</button>
   <button id="play">play</button>
@@ -192,6 +191,7 @@ const audio=document.getElementById("audio");
 const trackEl=document.getElementById("lyricsTrack");
 const line=document.getElementById("line");
 const intro=document.getElementById("intro");
+const controls=document.getElementById("controls");
 
 const playBtn=document.getElementById("play");
 const backBtn=document.getElementById("back");
@@ -202,9 +202,10 @@ const transitions=["fade","slide-up","slide-down","zoom","blur","rotate","stretc
 const rand=()=>transitions[Math.floor(Math.random()*transitions.length)];
 
 /* START */
-document.getElementById("hint").onclick=async()=>{
+document.getElementById("start").onclick=async()=>{
   await audio.play();
   intro.classList.add("hide");
+  controls.style.display="flex";
   playBtn.textContent="pause";
 };
 
@@ -226,16 +227,22 @@ trackEl.addEventListener("load",()=>{
 
   const refresh=()=>{
     const a=track.activeCues;
-    if(!a||!a.length){line.textContent="…";line.className="fade";return;}
+    if(!a||!a.length){
+      line.style.opacity=0;
+      return;
+    }
     const cue=a[0];
     if(cue===lastCue)return;
     lastCue=cue;
 
     const t=rand();
     line.className=t;
+    line.style.opacity=0;
+
     setTimeout(()=>{
       line.textContent=cue.text;
       line.className="fade";
+      line.style.opacity=1;
     },260);
   };
 
