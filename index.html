@@ -75,7 +75,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
 .scene[data-style="normale"] .meta .title{
   font-family:"Roboto", system-ui, sans-serif;
   font-weight:700;
-  letter-spacing:.2px;
+  letter-spacing:.15px;
 }
 .scene[data-style="amore"] .meta .title{
   font-family:"Playfair Display", serif;
@@ -98,18 +98,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   opacity:0;
   transition:opacity .22s ease, transform .35s ease, filter .35s ease;
   text-shadow:0 12px 44px rgba(0,0,0,.95);
+  font-size:clamp(30px,5vw,58px);
 }
 
-/* Font testo per stile (richiesto: standard = Roboto) */
+/* Font testo per stile (richiesta: normale = Roboto sia titolo che testo) */
 body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; }
 body[data-active-style="normale"]  #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
 body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
 
-/* size comune */
-#line{ font-size:clamp(30px,5vw,58px); }
-
 /* ===== TRANSITIONS (10+) ===== */
-/* (applicate al line quando cambia cue) */
 .t-fade-in   { transform:none; filter:none; }
 .t-pop       { transform:scale(1.08); filter:none; }
 .t-slide-up  { transform:translateY(40px); filter:none; }
@@ -149,7 +146,6 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 }
 
 /* ===== BREATH (bpm-driven) ===== */
-/* usa CSS vars: --rz, --scale, --breatheScale, --breatheDur */
 @keyframes bgPump{
   0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
   50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
@@ -159,7 +155,7 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
   animation: bgPump var(--breatheDur, 1.2s) linear infinite;
 }
 
-/* riduci motion per accessibilità */
+/* accessibilità */
 @media (prefers-reduced-motion: reduce){
   .scene.breathing{ animation:none; }
   #line{ transition:none; }
@@ -167,7 +163,7 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 </style>
 </head>
 
-<body data-active-style="thriller">
+<body data-active-style="normale">
 
 <div id="stage"><div id="world"></div></div>
 <div id="karaoke"><div id="line"></div></div>
@@ -182,10 +178,18 @@ body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-
 
 <script>
 /* =========================================================
-   CONFIG (3 stili + bpm)
+   TRACKLIST (ORDINE: 01 -> 02 -> 03)
    ========================================================= */
-
 const tracks = [
+  {
+    artist: "Davide*Kra",
+    title: "In Throw",
+    bpm: 90,
+    style: "normale",
+    cover: "https://i.ibb.co/9mtLF0JV/In-Throw.png",
+    audio: "DavideKra - 01 - In Throw.mp3",
+    vtt:   "DavideKra - 01 - In Throw.vtt"
+  },
   {
     artist: "Davide*Kra",
     title: "Sai Tenere Un Segreto?",
@@ -207,14 +211,8 @@ const tracks = [
 ];
 
 /* =========================================================
-   STYLE PRESETS (animazioni per argomento)
+   STYLE PRESETS
    ========================================================= */
-
-/**
- * Ogni stile:
- * - transitions: set di transizioni possibili per il karaoke
- * - breatheAmp: moltiplicatore ampiezza respiro (si somma al bpm)
- */
 const STYLE = {
   thriller: {
     transitions: ["t-blur","t-rotate","t-jitter","t-snap","t-slide-up","t-slide-down","t-pop","t-stretch","t-fade-in"],
@@ -230,32 +228,25 @@ const STYLE = {
   }
 };
 
-/* =========================================================
-   BPM -> breathing mapping
-   ========================================================= */
-/**
- * Vogliamo qualcosa di semplice e "musicale":
- * - dur ~ 120 / bpm secondi (mezzo periodo), con clamp
- * - amp cresce con bpm (più bpm = respiro più "dance")
- */
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
 function bpmToBreath(bpm, styleKey){
   const s = STYLE[styleKey] || STYLE.normale;
 
-  // durata: più bpm => più veloce
-  // 120/bpm dà: 126->0.95s, 91->1.32s, 70->1.71s
   let dur = 120 / Math.max(40, bpm);
   dur = clamp(dur, 0.75, 2.2);
 
-  // ampiezza: cresce col bpm, ma con clamp per non distruggere tutto
-  // base 1.10 a bpm 70 ~ 1.10; bpm 126 ~ 1.18
-  let amp = 1.06 + (bpm - 70) * 0.0015; // 70=>1.06, 126=>~1.144
-  amp = clamp(amp, 1.06, 1.22) * s.breatheAmp; // stile modula
+  let amp = 1.06 + (bpm - 70) * 0.0015;
+  amp = clamp(amp, 1.06, 1.22) * s.breatheAmp;
   amp = clamp(amp, 1.06, 1.28);
 
   return { dur, amp };
 }
 
-function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function pickTransition(styleKey){
+  const set = (STYLE[styleKey] || STYLE.normale).transitions;
+  return set[(Math.random()*set.length)|0];
+}
 
 /* =========================================================
    CREATE SCENES
@@ -275,7 +266,6 @@ const scenes = tracks.map((t,i)=>{
       <div class="artist">${t.artist}</div>
     </div>
   `;
-
   world.appendChild(s);
   return { el:s, z:-i*SCENE_DEPTH, track:t };
 });
@@ -302,17 +292,17 @@ function computeActiveIndex(){
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
   cameraZ = clamp(cameraZ + e.deltaY * SPEED, 0, MAX_Z);
-  updateScenes(); // NON stoppiamo audio qui (come richiesto)
+  updateScenes();
 },{passive:false});
 
 /* =========================================================
-   AUDIO + KARAOKE (continua durante scroll)
+   AUDIO + KARAOKE
    ========================================================= */
 const audio = document.getElementById("audio");
 const playBtn = document.getElementById("play");
 const line = document.getElementById("line");
 
-let currentTrackIndex = null; // quale traccia è caricata e suona
+let currentTrackIndex = null;
 let trackEl = null;
 let lastCue = null;
 
@@ -330,11 +320,6 @@ function setActiveStyle(styleKey){
   document.body.dataset.activeStyle = styleKey || "normale";
 }
 
-function pickTransition(styleKey){
-  const set = (STYLE[styleKey] || STYLE.normale).transitions;
-  return set[(Math.random()*set.length)|0];
-}
-
 function loadTrack(index){
   const t = scenes[index].track;
   if(currentTrackIndex === index && audio.src) return;
@@ -343,8 +328,8 @@ function loadTrack(index){
   currentTrackIndex = index;
 
   audio.src = t.audio;
+  setActiveStyle(t.style);
 
-  // sostituisci track
   trackEl = document.createElement("track");
   trackEl.kind = "subtitles";
   trackEl.srclang = "it";
@@ -352,9 +337,6 @@ function loadTrack(index){
   trackEl.src = t.vtt;
   trackEl.default = true;
   audio.appendChild(trackEl);
-
-  // stile testo karaoke
-  setActiveStyle(t.style);
 
   trackEl.addEventListener("load",()=>{
     const tt = trackEl.track;
@@ -370,14 +352,12 @@ function loadTrack(index){
       if(cue === lastCue) return;
       lastCue = cue;
 
-      // transition diversa per stile
       const tr = pickTransition(t.style);
       line.className = tr;
       line.style.opacity = 0;
 
       setTimeout(()=>{
         line.textContent = cue.text;
-        // reset verso "neutro" (t-fade-in) per render stabile
         line.className = "t-fade-in";
         line.style.opacity = 1;
       }, 160);
@@ -396,7 +376,6 @@ function updatePlayingMeta(){
 }
 
 function setBreathing(){
-  // respiro solo se: audio in play + sei sulla scena del brano in ascolto
   scenes.forEach((s,i)=>{
     const should = (!audio.paused) && (currentTrackIndex === i) && (activeIndex === i);
     s.el.classList.toggle("breathing", should);
@@ -415,8 +394,6 @@ audio.addEventListener("ended", ()=>{ playBtn.textContent="play"; updatePlayingM
 
 playBtn.addEventListener("click", async ()=>{
   const t = scenes[activeIndex].track;
-
-  // se stai su una scena senza file (in futuro), non fare nulla
   if(!t.audio || !t.vtt) return;
 
   if(audio.paused){
@@ -425,9 +402,6 @@ playBtn.addEventListener("click", async ()=>{
     return;
   }
 
-  // se sta suonando:
-  // - stessa traccia -> pausa
-  // - traccia diversa -> switch e continua
   if(currentTrackIndex === activeIndex){
     audio.pause();
     clearKaraoke();
@@ -442,7 +416,7 @@ document.getElementById("back").addEventListener("click", ()=>{ audio.currentTim
 document.getElementById("forward").addEventListener("click", ()=>{ audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); });
 
 /* =========================================================
-   RENDER SCENES + breathing vars
+   RENDER
    ========================================================= */
 function updateScenes(){
   scenes.forEach((s)=>{
@@ -453,11 +427,9 @@ function updateScenes(){
     const scale = 0.72 + t * 0.28;
     const opacity = t;
 
-    // variabili per breathing
     s.el.style.setProperty("--rz", `${rz}px`);
     s.el.style.setProperty("--scale", `${scale}`);
 
-    // se non sta respirando, applica transform normale
     if(!s.el.classList.contains("breathing")){
       s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
     }
