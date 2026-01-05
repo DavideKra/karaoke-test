@@ -3,345 +3,267 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Davide*Kra — Album 3D</title>
+<title>Davide*Kra — Album 3D V7 (Interlude Added)</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
+html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
 :root{
-  --hudBg: rgba(0,0,0,.30);
-  --hudBd: rgba(255,255,255,.12);
-  --hudTx: rgba(255,255,255,.88);
-  --hudTx2: rgba(255,255,255,.72);
+  --hudTx: rgba(255,255,255,.9);
 }
 
-/* ===== FX CANVAS (overlay soft) ===== */
-#fx{
-  position:fixed; inset:0;
-  z-index:12; /* sopra scene, sotto lyrics/HUD */
-  pointer-events:none;
-  mix-blend-mode: screen;
-  opacity:.55;
+/* ===== CANVAS BG (Motore Fisico) ===== */
+#bg-canvas {
+  position: fixed; inset: 0;
+  z-index: 1; 
+  pointer-events: none;
+}
+
+/* ===== FX LAYER (Colori e Atmosfera) ===== */
+#fx-layer {
+  position: fixed; inset: 0;
+  z-index: 20; 
+  pointer-events: none;
+  transition: all 0.5s ease;
+  mix-blend-mode: overlay;
+}
+
+/* THRILLER: Scuro + Contrasto */
+body[data-active-style="thriller"] #fx-layer {
+  background: radial-gradient(circle at center, transparent 30%, #000 120%);
+  box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+  filter: contrast(1.2) brightness(0.9) sepia(0.2);
+}
+
+/* AMORE: Glow Rosa Intenso */
+body[data-active-style="amore"] #fx-layer {
+  background: radial-gradient(circle, rgba(255,100,150,0.2) 0%, rgba(50,0,20,0.6) 90%);
+  filter: blur(0.5px) brightness(1.2) contrast(1.1);
+  animation: lovePulse 4s infinite;
+}
+@keyframes lovePulse { 0% {opacity:0.8} 50% {opacity:1} 100% {opacity:0.8} }
+
+/* NORMALE: Bluastro Tecnico */
+body[data-active-style="normale"] #fx-layer {
+  background: radial-gradient(circle, rgba(200,200,255,0.05) 0%, transparent 80%);
+  opacity: 0.5;
 }
 
 /* ===== STAGE ===== */
 #stage{
   position:fixed; inset:0;
-  perspective:1700px;
+  perspective:1800px;
   overflow:hidden;
-  z-index:10;
+  z-index: 10;
 }
-#world{position:absolute; inset:0; transform-style:preserve-3d; will-change:transform;}
-
-/* micro-thump */
-@keyframes thump {
-  0%   { transform: translateZ(0) translateX(0) scale(1); }
-  35%  { transform: translateZ(0) translateX(-1.5px) scale(1.012); }
-  70%  { transform: translateZ(0) translateX(1.0px) scale(0.998); }
-  100% { transform: translateZ(0) translateX(0) scale(1); }
-}
-#world.thump{ animation: thump 240ms ease-out 1; }
-
-/* HUD flash */
-@keyframes hudFlash{
-  0%   { box-shadow: 0 0 0 rgba(255,255,255,0); border-color: rgba(255,255,255,.12); background: rgba(0,0,0,.30); }
-  55%  { box-shadow: 0 0 28px rgba(255,255,255,.14); border-color: rgba(255,255,255,.30); background: rgba(0,0,0,.34); }
-  100% { box-shadow: 0 0 0 rgba(255,255,255,0); border-color: rgba(255,255,255,.12); background: rgba(0,0,0,.30); }
-}
-.flash{
-  animation: hudFlash 180ms ease-out 1;
-}
+#world{position:absolute; inset:0; transform-style:preserve-3d;}
 
 /* ===== SCENE ===== */
 .scene{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
   transform-style:preserve-3d;
-  will-change:transform,opacity;
-  opacity:0;
-}
-
-/* cover layer */
-.scene .cover{
-  position:absolute; inset:0;
-  background-image: var(--cover-url);
   background-repeat:no-repeat;
-  background-position:center;
+  background-position:center center;
   background-size:contain;
-  transform: translateZ(0);
+  will-change:transform,opacity;
 }
-
-/* overlay for readability */
 .scene::before{
   content:"";
   position:absolute; inset:0;
-  background:linear-gradient(to bottom, rgba(0,0,0,.42), rgba(0,0,0,.90));
+  background:linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.8));
   pointer-events:none;
-  z-index:2;
+  z-index: 1;
 }
-
-/* Reflection "floor" (compatibile) */
-.scene .reflect{
-  position:absolute;
-  left:50%;
-  top:52%;
-  width:min(88vw, 980px);
-  height:min(44vh, 520px);
-  transform: translateX(-50%) translateY(18vh) scaleY(-1);
-  background-image: var(--cover-url);
-  background-repeat:no-repeat;
-  background-position:center top;
-  background-size:contain;
-  opacity:.18;
-  filter: blur(1.4px) saturate(1.05);
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
-  z-index:1;
-  pointer-events:none;
+.scene::after {
+  content: "";
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  height: 100%;
+  background-image: inherit;
+  background-size: inherit;
+  background-position: inherit;
+  background-repeat: no-repeat;
+  transform: scaleY(-1) translateY(-2px);
+  transform-origin: top;
+  opacity: 0.4;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
+.scene > *{position:relative; z-index:2}
 
-/* content above */
-.scene > *{position:relative; z-index:3}
+/* THUMP EFFECT */
+@keyframes thumpAnim {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); filter: brightness(1.1); }
+  100% { transform: scale(1); }
+}
+.thump-effect { animation: thumpAnim 0.15s ease-out forwards; }
 
-/* ===== META center ===== */
 .meta{
   text-align:center;
   pointer-events:none;
   max-width:86vw;
   transition:opacity .35s ease, transform .35s ease, filter .35s ease;
+  margin-bottom: 40px;
 }
 .meta .title{
   margin:0;
-  font-size:clamp(34px,6vw,68px);
+  font-size:clamp(40px,7vw,80px);
   line-height:1.05;
-  text-shadow:0 12px 44px rgba(0,0,0,.95);
+  text-shadow:0 12px 44px rgba(0,0,0,1);
 }
 .meta .artist{
-  margin-top:10px;
-  opacity:.72;
+  margin-top:12px;
+  font-size: 1.2rem;
+  opacity:.8;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   text-shadow:0 10px 36px rgba(0,0,0,.9);
 }
-
-/* meta sparisce SOLO sulla scena della traccia che sta suonando */
 .scene.is-playing .meta{
   opacity:0;
-  transform:translateY(-6px);
-  filter:blur(.6px);
+  transform:translateY(-10px);
+  filter:blur(4px);
 }
 
-/* ===== Left title (big) ===== */
-#leftTitle{
-  position:fixed;
-  top:18px; left:18px;
-  z-index:40;
-  padding:12px 14px;
-  border-radius:14px;
-  background:var(--hudBg);
-  border:1px solid var(--hudBd);
-  backdrop-filter: blur(8px);
-  max-width:min(56vw, 740px);
-  user-select:none;
-}
-#leftTitle .t{
-  font-size:clamp(18px, 2.2vw, 26px);
-  line-height:1.05;
-  text-shadow:0 10px 28px rgba(0,0,0,.9);
-}
-#leftTitle .a{
-  margin-top:6px;
-  font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
-  color:var(--hudTx2);
-}
+/* Styles Font */
+.scene[data-style="thriller"] .meta .title{ font-family:"Rubik Dirt", cursive; letter-spacing:.25px; color: #ffcece; }
+.scene[data-style="normale"] .meta .title{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing:-1px; }
+.scene[data-style="amore"] .meta .title{ font-family:"Playfair Display", serif; font-weight:700; font-style: italic; color: #ffe0f0; }
 
-/* per stile (titolo in alto a sinistra) */
-body[data-active-style="thriller"] #leftTitle .t{ font-family:"Rubik Dirt", cursive; letter-spacing:.25px; }
-body[data-active-style="normale"]  #leftTitle .t{ font-family:"Roboto", system-ui, sans-serif; font-weight:800; }
-body[data-active-style="amore"]    #leftTitle .t{ font-family:"Playfair Display", serif; font-weight:800; }
-
-/* ===== Right legend ===== */
-#hud{
-  position:fixed;
-  top:18px; right:18px;
-  z-index:40;
-  font: 12.5px/1.25 "Roboto", system-ui, sans-serif;
-  color:var(--hudTx);
-  background:var(--hudBg);
-  border:1px solid var(--hudBd);
-  padding:12px 14px;
-  border-radius:14px;
-  backdrop-filter: blur(8px);
-  user-select:none;
-  max-width: min(40vw, 520px);
+/* ===== TUTORIAL ===== */
+#tutorial {
+  position: fixed; bottom: 30px; right: 30px; z-index: 40;
+  font: 12px/1.5 "Roboto", sans-serif;
+  color: rgba(255,255,255,0.6);
+  text-align: right;
+  pointer-events: none;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
 }
-#hud .hash{font-weight:900; letter-spacing:.25px}
-#hud .hint{margin-top:8px; font-size:12px; opacity:.82}
+#tutorial strong { color: #fff; }
 
-/* ===== Mini-map with always-visible titles ===== */
+/* ===== Mini-map ===== */
 #minimap{
-  position:fixed;
-  right:18px;
-  top:130px;
-  z-index:40;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  padding:12px 12px;
-  border-radius:14px;
-  background:var(--hudBg);
-  border:1px solid var(--hudBd);
-  backdrop-filter: blur(8px);
-  max-width:min(40vw, 520px);
+  position:fixed; right:20px; top:50%; transform: translateY(-50%);
+  z-index:40; display:flex; flex-direction:column; gap:16px; align-items: flex-end;
 }
-.mm-item{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  cursor:pointer;
-  user-select:none;
-}
+.mm-item { display: flex; align-items: center; justify-content: flex-end; cursor: pointer; }
 .mm-dot{
-  width:10px; height:10px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.22);
-  background:rgba(255,255,255,.14);
-  flex:0 0 auto;
+  width:8px; height:8px; border-radius:50%;
+  border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.1);
+  transition: all 0.3s ease; margin-left: 12px; position:relative;
 }
-.mm-item:hover .mm-dot{background:rgba(255,255,255,.24)}
-.mm-item.active .mm-dot{
-  background:rgba(255,255,255,.95);
-  border-color:rgba(255,255,255,.95);
-}
-.mm-item.playing .mm-dot{
-  box-shadow:0 0 0 6px rgba(255,255,255,.10);
-}
+.mm-item:hover .mm-dot { background: #fff; transform: scale(1.2); }
+.mm-item.active .mm-dot { background: #fff; border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.3); }
+.mm-item.playing .mm-dot::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:1px solid #fff; opacity:0.6; }
 .mm-label{
-  font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
-  color:rgba(255,255,255,.86);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  font: 11px "Roboto", sans-serif; text-transform: uppercase; letter-spacing: 1px; color: #fff;
+  opacity: 0.3; transition: opacity 0.3s; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
+.mm-item:hover .mm-label, .mm-item.active .mm-label { opacity: 1; font-weight: 700; }
 
 /* ===== Karaoke ===== */
 #karaoke{
-  position:fixed; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  pointer-events:none;
-  z-index:25;
-  padding:40px;
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  pointer-events:none; z-index:25; padding:40px;
 }
 #line{
-  max-width:1100px;
-  text-align:center;
-  line-height:1.25;
-  opacity:0;
+  max-width:1100px; text-align:center; line-height:1.2; opacity:0;
   transition:opacity .18s ease, transform .32s ease, filter .32s ease;
-  text-shadow:0 12px 44px rgba(0,0,0,.95);
-  font-size:clamp(30px,5vw,58px);
+  text-shadow:0 12px 44px rgba(0,0,0,1); font-size:clamp(30px,5vw,64px);
 }
-/* Font testo per stile */
-body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; }
-body[data-active-style="normale"]  #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
-body[data-active-style="amore"]    #line{ font-family:"Roboto", system-ui, sans-serif; font-weight:700; }
+body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; color: #ff4444; }
+body[data-active-style="normale"]  #line{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing: -1px;}
+body[data-active-style="amore"]    #line{ font-family:"Playfair Display", serif; font-weight:700; font-style:italic; }
 
 /* Transitions */
-.t-fade-in   { transform:none; filter:none; }
-.t-pop       { transform:scale(1.08); filter:none; }
-.t-slide-up  { transform:translateY(40px); filter:none; }
-.t-slide-down{ transform:translateY(-40px); filter:none; }
-.t-slide-left{ transform:translateX(60px); filter:none; }
-.t-slide-right{transform:translateX(-60px); filter:none; }
-.t-rotate    { transform:rotate(-3deg) scale(.98); filter:none; }
-.t-blur      { transform:none; filter:blur(14px); }
-.t-stretch   { transform:scaleY(.72); filter:none; }
-.t-snap      { transform:scale(.92); filter:contrast(1.2); }
-.t-jitter    { transform:translateX(-6px) rotate(.8deg); filter:none; }
+.t-fade-in    { transform:none; filter:none; }
+.t-pop        { transform:scale(1.08); filter:none; }
+.t-slide-up   { transform:translateY(40px); filter:none; }
+.t-slide-down { transform:translateY(-40px); filter:none; }
+.t-slide-left { transform:translateX(60px); filter:none; }
+.t-slide-right{ transform:translateX(-60px); filter:none; }
+.t-rotate     { transform:rotate(-3deg) scale(.98); filter:none; }
+.t-blur       { transform:none; filter:blur(14px); }
+.t-stretch    { transform:scaleY(.72); filter:none; }
+.t-snap       { transform:scale(.92); filter:contrast(1.2); }
+.t-jitter     { transform:translateX(-6px) rotate(.8deg); filter:none; }
 
-/* ===== Player ===== */
-#audioA,#audioB{display:none}
+/* ===== Player & Title ===== */
 #playerTitle{
-  position:fixed;
-  bottom:56px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:32;
-  font: 12.5px/1.2 "Roboto", system-ui, sans-serif;
-  color:rgba(255,255,255,.86);
-  opacity:.9;
-  user-select:none;
-  text-shadow:0 10px 28px rgba(0,0,0,.9);
+  position:fixed; bottom: 80px; left: 40px; z-index:32;
+  font: 700 32px/1 "Roboto", sans-serif; color:#fff;
+  opacity:0; transform: translateY(20px); transition: all 0.5s ease;
+  text-shadow:0 10px 30px rgba(0,0,0,1); letter-spacing: -0.5px;
 }
+#playerTitle.visible { opacity: 1; transform: translateY(0); }
+#playerTitle span {
+  display: block; font-size: 14px; font-weight: 400; opacity: 0.6;
+  margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;
+}
+
 #controls{
-  position:fixed;
-  bottom:26px;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:24px;
-  font: 13px/1.2 "Roboto", system-ui, sans-serif;
-  opacity:.86;
-  z-index:31;
-  user-select:none;
+  position:fixed; bottom:40px; left:40px; display:flex; gap:24px;
+  font: 13px/1.2 "Roboto", sans-serif; opacity:.86; z-index:31; user-select:none;
 }
 #controls button{
-  background:none;
-  border:none;
-  color:rgba(255,255,255,.85);
-  cursor:pointer;
-  padding:4px 6px;
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+  color:#fff; cursor:pointer; padding:8px 16px; border-radius: 20px;
+  transition: all 0.2s; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;
 }
-#controls button:hover{ color:#fff; text-decoration:underline; }
+#controls button:hover{ background: #fff; color:#000; text-decoration:none; }
 
-/* ===== Breathing ===== */
 @keyframes bgPump{
   0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
   50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
   100% { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
 }
-.scene.breathing{
-  animation: bgPump var(--breatheDur, 1.2s) linear infinite;
-}
+.scene.breathing{ animation: bgPump var(--breatheDur, 1.2s) linear infinite; }
 
-@media (prefers-reduced-motion: reduce){
-  .scene.breathing{ animation:none; }
-  #line{ transition:none; }
-  #fx{ display:none; }
+@media (max-width: 600px) {
+    #tutorial { display: none; }
+    #playerTitle { font-size: 24px; bottom: 80px; left: 20px; }
+    #controls { left: 20px; }
 }
 </style>
 </head>
 
 <body data-active-style="normale">
 
-<div id="leftTitle">
-  <div class="t" id="leftT">—</div>
-  <div class="a" id="leftA">—</div>
-</div>
+<canvas id="bg-canvas"></canvas>
+<div id="fx-layer"></div>
 
-<div id="hud">
-  <div class="hash" id="hash">#</div>
-  <div class="hint">
-    Scorri con la rotellina avanti e indietro per vedere le tracce.<br>
-    Premi <b>Play</b> per far partire la canzone scelta.<br>
-    Tieni premuto <b>Shift</b> e scorri per “scrubbare” il tempo della canzone.
-  </div>
+<div id="tutorial">
+    Ruota per scorrere gli album.<br>
+    Clicca i titoli per saltare.<br>
+    <strong>Shift+Scroll</strong> per scrub traccia.
 </div>
 
 <div id="minimap" aria-label="Album map"></div>
 
 <div id="stage"><div id="world"></div></div>
-<canvas id="fx"></canvas>
-
 <div id="karaoke"><div id="line"></div></div>
 
 <audio id="audioA" preload="metadata" crossorigin="anonymous"></audio>
 <audio id="audioB" preload="metadata" crossorigin="anonymous"></audio>
 
-<div id="playerTitle">—</div>
+<div id="playerTitle">
+    <span id="pt-artist">Davide*Kra</span>
+    <div id="pt-song">Track Name</div>
+</div>
+
 <div id="controls">
   <button id="back">−10s</button>
-  <button id="play">play</button>
+  <button id="play">PLAY</button>
   <button id="forward">+10s</button>
 </div>
 
@@ -353,6 +275,7 @@ const tracks = [
   {
     artist:"Davide*Kra",
     title:"In Throw",
+    slug: "in-throw", 
     bpm:90,
     style:"normale",
     cover:"https://i.ibb.co/9mtLF0JV/In-Throw.png",
@@ -362,6 +285,7 @@ const tracks = [
   {
     artist:"Davide*Kra",
     title:"Sai Tenere Un Segreto?",
+    slug: "segreto",
     bpm:126,
     style:"thriller",
     cover:"https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png",
@@ -371,11 +295,22 @@ const tracks = [
   {
     artist:"Davide*Kra",
     title:"2 cose insieme",
+    slug: "2-cose",
     bpm:91,
     style:"normale",
     cover:"https://i.ibb.co/yndKknVM/2-cose-insieme.png",
     audio:"DavideKra - 03 - 2 Cose Insieme.mp3",
     vtt:"DavideKra - 03 - 2 Cose Insieme.vtt"
+  },
+  {
+    artist:"Davide*Kra",
+    title:"Interlude 01",
+    slug: "interlude-01",
+    bpm: 91,
+    style: "normale",
+    cover: "https://i.ibb.co/C52MZskD/Interlude-01.png",
+    audio: "DavideKra - 04 - Interlude.mp3",
+    vtt: "DavideKra - 04 - Interlude.vtt"
   }
 ];
 
@@ -401,98 +336,270 @@ function pickTransition(styleKey){
   return set[(Math.random()*set.length)|0];
 }
 
-/* BPM factor for FX: 70..140 => 0.75..1.35 */
-function bpmToFxFactor(bpm){
-  const t = clamp((bpm - 70) / 70, 0, 1);
-  return 0.75 + t * 0.60;
+/* =========================
+   CANVAS PARTICLES SYSTEM V6
+   ========================= */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let cw, ch;
+
+function resizeCanvas(){
+    cw = canvas.width = window.innerWidth;
+    ch = canvas.height = window.innerHeight;
 }
-function slugify(title){
-  return (title||"")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g,"-")
-    .replace(/(^-|-$)/g,"");
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+    constructor(style) { this.reset(style); }
+    reset(style) {
+        this.style = style;
+        this.x = Math.random() * cw;
+        this.y = Math.random() * ch;
+        this.life = Math.random() * 100;
+        
+        if (style === 'thriller') {
+            // PIOGGIA
+            this.vx = -1.5 + Math.random(); 
+            this.vy = 18 + Math.random() * 12;  
+            this.length = 20 + Math.random() * 30; 
+            this.y = Math.random() * -ch; 
+            this.alpha = 0.2 + Math.random() * 0.4;
+
+        } else if (style === 'amore') {
+            // AMORE: Mix di Petali (70%) e Lucciole (30%)
+            this.isPetal = Math.random() > 0.3; 
+            
+            if(this.isPetal){
+                this.vx = (Math.random() - 0.5) * 2; // Dondola
+                this.vy = 1 + Math.random() * 2;     // Cade
+                this.size = 6 + Math.random() * 8;   // Grandi
+                this.angle = Math.random() * Math.PI * 2;
+                this.spin = (Math.random() - 0.5) * 0.05;
+                this.y = Math.random() * -ch;
+                // Colori Petali: Rosso, Rosa scuro, Rosa chiaro
+                const tones = ["220, 20, 60", "255, 105, 180", "255, 192, 203"];
+                this.color = tones[Math.floor(Math.random()*tones.length)];
+                this.alpha = 0.6 + Math.random() * 0.4;
+            } else {
+                // Lucciole
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.size = 2 + Math.random() * 3;
+                this.alpha = 0; // Parte invisibile e pulsa
+                this.pulseSpeed = 0.02 + Math.random()*0.03;
+            }
+
+        } else {
+            // NORMALE: Geometria (Quadrati, Triangoli, Cerchi)
+            this.vx = (Math.random() - 0.5) * 0.6;
+            this.vy = (Math.random() - 0.5) * 0.6;
+            this.size = 10 + Math.random() * 20; // Grandi forme
+            this.angle = Math.random() * Math.PI * 2;
+            this.spin = (Math.random() - 0.5) * 0.02;
+            this.alpha = 0.3 + Math.random() * 0.4;
+            const shapes = ['square', 'triangle', 'circle'];
+            this.shapeType = shapes[Math.floor(Math.random()*shapes.length)];
+        }
+    }
+
+    update() {
+        this.life++;
+        
+        if(this.style === 'thriller') {
+            this.x += this.vx; this.y += this.vy;
+            if (this.y > ch) { this.y = -50; this.x = Math.random() * cw; }
+        
+        } else if (this.style === 'amore') {
+            if(this.isPetal){
+                this.y += this.vy;
+                this.x += Math.sin(this.life * 0.02 + this.angle) * 1.5; // Dondolio evidente
+                this.angle += this.spin;
+                if (this.y > ch) { this.y = -20; this.x = Math.random() * cw; }
+            } else {
+                // Lucciole
+                this.x += this.vx; this.y += this.vy;
+                // Loop bordi
+                if (this.x < 0) this.x = cw; if (this.x > cw) this.x = 0;
+                if (this.y < 0) this.y = ch; if (this.y > ch) this.y = 0;
+                // Pulsazione
+                this.alpha = 0.5 + Math.sin(this.life * this.pulseSpeed) * 0.5;
+            }
+
+        } else {
+            // Geometria
+            this.x += this.vx; this.y += this.vy;
+            this.angle += this.spin;
+            if (this.x < -50) this.x = cw+50; if (this.x > cw+50) this.x = -50;
+            if (this.y < -50) this.y = ch+50; if (this.y > ch+50) this.y = -50;
+        }
+    }
+
+    draw() {
+        if(this.style === 'thriller') {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(180, 190, 210, ${this.alpha})`;
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.vx, this.y + this.length);
+            ctx.stroke();
+
+        } else if (this.style === 'amore') {
+            if(this.isPetal){
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                // Disegna ovale (petalo)
+                ctx.ellipse(0, 0, this.size/2, this.size, 0, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.fill();
+                ctx.restore();
+            } else {
+                // Lucciola (Glow)
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255, 215, 0, ${this.alpha})`;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "rgba(255, 200, 50, 1)";
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+        } else {
+            // Geometria
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha})`;
+            ctx.lineWidth = 2;
+
+            if(this.shapeType === 'square'){
+                ctx.rect(-this.size/2, -this.size/2, this.size, this.size);
+            } else if (this.shapeType === 'circle'){
+                ctx.arc(0, 0, this.size/2, 0, Math.PI*2);
+            } else if (this.shapeType === 'triangle'){
+                ctx.moveTo(0, -this.size/2);
+                ctx.lineTo(this.size/2, this.size/2);
+                ctx.lineTo(-this.size/2, this.size/2);
+                ctx.closePath();
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
 }
-function toHashTag(title){
-  const s = slugify(title)
-    .split("-")
-    .filter(Boolean)
-    .map(w=>w.charAt(0).toUpperCase()+w.slice(1))
-    .join("");
-  return "#"+(s||"Track");
+
+let particles = [];
+for(let i=0; i<100; i++) particles.push(new Particle('normale'));
+
+function updateCanvasEffect(newStyle){ 
+    // Regola numero particelle in base allo stile
+    let targetCount = 120; // Default
+    if(newStyle === 'thriller') targetCount = 350; // Tanta pioggia
+    if(newStyle === 'amore') targetCount = 100;    // Petali + lucciole equilibrati
+    if(newStyle === 'normale') targetCount = 60;   // Meno forme ma grandi
+
+    // Aggiungi o rimuovi array
+    while(particles.length < targetCount) particles.push(new Particle(newStyle));
+    while(particles.length > targetCount) particles.pop();
+
+    particles.forEach(p => p.reset(newStyle)); 
 }
+
+function loopCanvas(){
+    ctx.clearRect(0,0,cw,ch);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loopCanvas);
+}
+loopCanvas();
 
 /* =========================
-   SCENES + DEPTH
+   SCENES & WORLD
    ========================= */
-const world = document.getElementById("world");
-const stage = document.getElementById("stage");
-const SCENE_DEPTH = 2100;
-
+const world=document.getElementById("world");
+const SCENE_DEPTH = 2200; 
 const scenes = tracks.map((t,i)=>{
   const el=document.createElement("div");
   el.className="scene";
   el.dataset.style=t.style;
-  el.style.setProperty("--cover-url", `url("${t.cover}")`);
+  el.style.backgroundImage=`url("${t.cover}")`;
+  
   el.innerHTML=`
-    <div class="reflect"></div>
-    <div class="cover"></div>
     <div class="meta">
       <div class="title">${t.title}</div>
       <div class="artist">${t.artist}</div>
     </div>`;
   world.appendChild(el);
-  return { el, z:-i*SCENE_DEPTH, track:t, index:i, slug: slugify(t.title) };
+  return { el, z:-i*SCENE_DEPTH, track:t, index:i };
 });
 const MAX_Z = SCENE_DEPTH * (tracks.length-1);
 
 /* =========================
-   HUD
+   MINI-MAP
    ========================= */
-const hashEl=document.getElementById("hash");
-const playerTitle=document.getElementById("playerTitle");
-const leftT=document.getElementById("leftT");
-const leftA=document.getElementById("leftA");
-const hud=document.getElementById("hud");
-const leftTitle=document.getElementById("leftTitle");
 const minimap=document.getElementById("minimap");
-
-function setActiveStyle(styleKey){ document.body.dataset.activeStyle = styleKey || "normale"; }
-
-function updateHUD(){
-  const t=scenes[activeIndex].track;
-  hashEl.textContent = toHashTag(t.title);
-  playerTitle.textContent = `${t.artist} — ${t.title}`;
-  leftT.textContent = t.title;
-  leftA.textContent = `${t.artist} • ${t.bpm} BPM • ${t.style}`;
-}
-
-/* =========================
-   MINIMAP (titles always visible)
-   ========================= */
-const mmItems = scenes.map((s,i)=>{
-  const row=document.createElement("div");
-  row.className="mm-item";
-  row.innerHTML = `<div class="mm-dot"></div><div class="mm-label">${s.track.title}</div>`;
-  row.addEventListener("click", ()=>{
-    targetZ = clamp(i*SCENE_DEPTH, 0, MAX_Z);
-    snapArmed = false;
+const dotItems = scenes.map((s,i)=>{
+  const wrapper = document.createElement("div");
+  wrapper.className = "mm-item";
+  wrapper.innerHTML=`
+    <span class="mm-label">${s.track.title}</span>
+    <div class="mm-dot"></div>
+  `;
+  wrapper.addEventListener("click", ()=> {
+    targetZ = i*SCENE_DEPTH;
+    targetZ = clamp(targetZ, 0, MAX_Z);
+    snapArmed = false; 
   });
-  minimap.appendChild(row);
-  return row;
+  minimap.appendChild(wrapper);
+  return wrapper;
 });
 
 /* =========================
-   CAMERA: inertia + snap + THUMP + deep link on settle
+   UI & LOGIC
+   ========================= */
+const ptSong=document.getElementById("pt-song");
+const ptArtist=document.getElementById("pt-artist");
+const playerTitleBlock=document.getElementById("playerTitle");
+
+function updateHUD(){
+  const t=scenes[activeIndex].track;
+  ptArtist.textContent = t.artist;
+  ptSong.textContent = t.title;
+}
+
+function updateURL(){
+    const t = scenes[activeIndex].track;
+    const hash = "#" + t.slug;
+    if(window.location.hash !== hash) { history.replaceState(null, null, hash); }
+}
+
+/* =========================
+   CAMERA & SNAP
    ========================= */
 let cameraZ=0;
 let targetZ=0;
 let activeIndex=0;
+let lastActiveIndex = -1;
 
-const SPEED=0.95;
+const SPEED = 0.95;
 let snapTimer=null;
 let snapArmed=false;
-let lastSettled=null;
+let hasThumped = false; 
+
+window.onload = () => {
+    const hash = window.location.hash.slice(1); 
+    if(hash){
+        const idx = tracks.findIndex(t => t.slug === hash);
+        if(idx >= 0){ activeIndex = idx; targetZ = idx * SCENE_DEPTH; cameraZ = targetZ; }
+    }
+    updateScenes();
+    updateCanvasEffect(tracks[activeIndex].style);
+    setActiveStyle(tracks[activeIndex].style);
+    playerTitleBlock.classList.add("visible");
+};
 
 function computeActiveIndex(zVal){
   let bestI=0, bestD=Infinity;
@@ -504,26 +611,8 @@ function computeActiveIndex(zVal){
   return bestI;
 }
 
-function flashHUD(){
-  // micro flash premium sui pannelli
-  [hud, leftTitle, minimap].forEach(el=>{
-    el.classList.remove("flash");
-    void el.offsetWidth;
-    el.classList.add("flash");
-    setTimeout(()=>el.classList.remove("flash"), 220);
-  });
-}
-
-function triggerThump(){
-  world.classList.remove("thump");
-  void world.offsetWidth;
-  world.classList.add("thump");
-  setTimeout(()=>world.classList.remove("thump"), 260);
-  flashHUD();
-}
-
 function armSnap(){
-  snapArmed = true;
+  snapArmed = true; hasThumped = false; 
   if(snapTimer) clearTimeout(snapTimer);
   snapTimer = setTimeout(()=>{
     if(!snapArmed) return;
@@ -533,38 +622,14 @@ function armSnap(){
 }
 
 /* =========================
-   DEEP LINKING (hash)
-   ========================= */
-function setHashForIndex(i){
-  const slug = scenes[i]?.slug || "";
-  if(!slug) return;
-  history.replaceState(null, "", `#${slug}`);
-}
-function readHashIndex(){
-  const h = (location.hash || "").replace("#","").trim().toLowerCase();
-  if(!h) return null;
-  const idx = scenes.findIndex(s => s.slug === h);
-  return idx >= 0 ? idx : null;
-}
-function jumpToHashIfAny(){
-  const idx = readHashIndex();
-  if(idx === null) return;
-  targetZ = clamp(idx*SCENE_DEPTH, 0, MAX_Z);
-  cameraZ = targetZ;
-  lastSettled = idx;
-}
-
-/* =========================
-   AUDIO ENGINE (crossfade) + lyrics slice
+   AUDIO ENGINE
    ========================= */
 const audioA=document.getElementById("audioA");
 const audioB=document.getElementById("audioB");
-const audios=[audioA,audioB];
-
+const audios=[audioA, audioB];
 let audioCtx=null, srcA=null, srcB=null, gA=null, gB=null;
 let currentPlayer=0;
 let playingIndex=null;
-
 let vttSession=0;
 let currentTrackEl=null;
 
@@ -574,75 +639,46 @@ const line=document.getElementById("line");
 function ensureAudioGraph(){
   if(audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  srcA = audioCtx.createMediaElementSource(audioA);
-  srcB = audioCtx.createMediaElementSource(audioB);
-  gA = audioCtx.createGain();
-  gB = audioCtx.createGain();
-  gA.gain.value = 1;
-  gB.gain.value = 0;
-  srcA.connect(gA).connect(audioCtx.destination);
-  srcB.connect(gB).connect(audioCtx.destination);
+  srcA = audioCtx.createMediaElementSource(audioA); srcB = audioCtx.createMediaElementSource(audioB);
+  gA = audioCtx.createGain(); gB = audioCtx.createGain();
+  gA.gain.value = 1; gB.gain.value = 0;
+  srcA.connect(gA).connect(audioCtx.destination); srcB.connect(gB).connect(audioCtx.destination);
 }
-function getCurrentAudio(){ return audios[currentPlayer]; }
-function getOtherAudio(){ return audios[1-currentPlayer]; }
-function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
-function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
+
+function setActiveStyle(styleKey){
+  document.body.dataset.activeStyle = styleKey || "normale";
+  updateCanvasEffect(styleKey || "normale");
+}
 
 function clearKaraoke(){
-  vttSession++;
-  line.style.opacity=0;
-  line.textContent="";
-  if(currentTrackEl){
-    try{ currentTrackEl.remove(); }catch(e){}
-    currentTrackEl=null;
-  }
+  vttSession++; line.style.opacity=0; line.textContent="";
+  if(currentTrackEl){ try{ currentTrackEl.remove(); }catch(e){} currentTrackEl = null; }
 }
 
-function bindKaraokeTo(playerEl, trackObj){
-  clearKaraoke();
-  const mySession = vttSession;
-
+function bindKaraokeTo(playerEl, trackObj, boundIndex){
+  clearKaraoke(); const mySession = vttSession;
   const tr=document.createElement("track");
-  tr.kind="subtitles";
-  tr.srclang="it";
-  tr.label="lyrics";
-  tr.src=trackObj.vtt;
-  tr.default=true;
-  playerEl.appendChild(tr);
-  currentTrackEl = tr;
+  tr.kind="subtitles"; tr.srclang="it"; tr.label="lyrics"; tr.src=trackObj.vtt; tr.default=true;
+  playerEl.appendChild(tr); currentTrackEl = tr;
 
   tr.addEventListener("load", ()=>{
     if(mySession !== vttSession) return;
-    const tt = tr.track;
-    tt.mode="hidden";
-    let lastCue=null;
-
+    const tt = tr.track; tt.mode="hidden"; let lastCue=null;
     const refresh=()=>{
       if(mySession !== vttSession) return;
       if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
       if(getCurrentAudio().paused) { line.style.opacity=0; return; }
-
-      const a = tt.activeCues;
-      if(!a || !a.length){ line.style.opacity=0; return; }
-
-      const cue=a[0];
-      if(cue===lastCue) return;
-      lastCue=cue;
-
+      const a = tt.activeCues; if(!a || !a.length){ line.style.opacity=0; return; }
+      const cue=a[0]; if(cue===lastCue) return; lastCue=cue;
       const trClass = pickTransition(trackObj.style);
-      line.className = trClass;
-      line.style.opacity = 0;
-
+      line.className = trClass; line.style.opacity = 0;
       setTimeout(()=>{
         if(mySession !== vttSession) return;
         if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
         if(getCurrentAudio().paused) { line.style.opacity=0; return; }
-        line.textContent = cue.text;
-        line.className = "t-fade-in";
-        line.style.opacity = 1;
+        line.textContent = cue.text; line.className = "t-fade-in"; line.style.opacity = 1;
       }, 150);
     };
-
     tt.addEventListener("cuechange", refresh);
     playerEl.addEventListener("timeupdate", refresh);
     playerEl.addEventListener("seeked", ()=>{ lastCue=null; refresh(); });
@@ -650,380 +686,147 @@ function bindKaraokeTo(playerEl, trackObj){
   });
 }
 
+function getCurrentAudio(){ return audios[currentPlayer]; }
+function getOtherAudio(){ return audios[1-currentPlayer]; }
+function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
+function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
+
 function updatePlayingUI(){
-  const a = getCurrentAudio();
-  playBtn.textContent = (playingIndex !== null && !a.paused) ? "pause" : "play";
-
-  scenes.forEach((s,i)=>{
-    s.el.classList.toggle("is-playing", (playingIndex===i && playingIndex!==null && !a.paused));
+  const isGlobalPlaying = (playingIndex !== null && !getCurrentAudio().paused);
+  if (isGlobalPlaying && activeIndex === playingIndex) { playBtn.textContent = "PAUSE"; } else { playBtn.textContent = "PLAY"; }
+  
+  scenes.forEach((s,i)=>{ s.el.classList.toggle("is-playing", (playingIndex===i && isGlobalPlaying)); });
+  dotItems.forEach((d,i)=>{
+    d.classList.toggle("active", i===activeIndex);
+    d.classList.toggle("playing", i===playingIndex && isGlobalPlaying);
   });
-
-  mmItems.forEach((row,i)=>{
-    row.classList.toggle("active", i===activeIndex);
-    row.classList.toggle("playing", (i===playingIndex && playingIndex!==null && !a.paused));
-  });
-
   setBreathing();
 }
 
 function setBreathing(){
-  const a = getCurrentAudio();
   scenes.forEach((s,i)=>{
-    const should = (playingIndex===i) && (activeIndex===i) && (playingIndex!==null) && !a.paused;
+    const should = (playingIndex===i) && (activeIndex===i) && (playingIndex!==null) && !getCurrentAudio().paused;
     s.el.classList.toggle("breathing", should);
     if(should){
       const {dur, amp} = bpmToBreath(s.track.bpm, s.track.style);
-      s.el.style.setProperty("--breatheDur", `${dur}s`);
-      s.el.style.setProperty("--breatheScale", `${amp}`);
+      s.el.style.setProperty("--breatheDur", `${dur}s`); s.el.style.setProperty("--breatheScale", `${amp}`);
     }
   });
 }
 
 async function playOrToggle(){
-  ensureAudioGraph();
-  await audioCtx.resume();
-
-  const wantIndex = activeIndex;
-  const want = scenes[wantIndex].track;
+  ensureAudioGraph(); await audioCtx.resume();
+  const wantIndex = activeIndex; const want = scenes[wantIndex].track;
 
   if(playingIndex === null){
-    playingIndex = wantIndex;
-    const a = getCurrentAudio();
-    a.src = want.audio;
-    a.load();
+    playingIndex = wantIndex; const a = getCurrentAudio();
+    a.src = want.audio; a.load();
     setActiveStyle(want.style);
-    bindKaraokeTo(a, want);
-    await a.play();
-    updatePlayingUI();
-    return;
+    bindKaraokeTo(a, want, wantIndex);
+    await a.play(); updatePlayingUI(); return;
   }
-
   if(playingIndex === wantIndex){
     const a = getCurrentAudio();
-    if(a.paused){
-      await a.play();
-    }else{
-      a.pause();
-      line.style.opacity=0;
-    }
-    updatePlayingUI();
-    return;
+    if(a.paused){ await a.play(); } else { a.pause(); line.style.opacity=0; }
+    updatePlayingUI(); return;
   }
-
   await crossfadeTo(wantIndex);
 }
 
 async function crossfadeTo(nextIndex){
-  const FADE = 1.15;
-
-  const prevAudio = getCurrentAudio();
-  const nextAudio = getOtherAudio();
-  const prevGain = getCurrentGain();
-  const nextGain = getOtherGain();
-
+  const FADE = 1.15; 
+  const prevAudio = getCurrentAudio(); const nextAudio = getOtherAudio();
+  const prevGain = getCurrentGain(); const nextGain = getOtherGain();
   const next = scenes[nextIndex].track;
 
-  playingIndex = nextIndex;
-  setActiveStyle(next.style);
-
-  nextAudio.pause();
-  nextAudio.currentTime = 0;
-  nextAudio.src = next.audio;
-  nextAudio.load();
-
-  bindKaraokeTo(nextAudio, next);
+  playingIndex = nextIndex; setActiveStyle(next.style);
+  nextAudio.pause(); nextAudio.currentTime = 0; nextAudio.src = next.audio; nextAudio.load();
+  bindKaraokeTo(nextAudio, next, nextIndex);
 
   nextGain.gain.cancelScheduledValues(audioCtx.currentTime);
   prevGain.gain.cancelScheduledValues(audioCtx.currentTime);
   nextGain.gain.setValueAtTime(0, audioCtx.currentTime);
+  prevGain.gain.setValueAtTime(prevGain.gain.value, audioCtx.currentTime);
 
   await nextAudio.play();
-
   nextGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + FADE);
   prevGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
 
   setTimeout(()=>{
-    try{
-      prevAudio.pause();
-      prevAudio.removeAttribute("src");
-      prevAudio.load();
-    }catch(e){}
+    try{ prevAudio.pause(); prevAudio.removeAttribute("src"); prevAudio.load(); }catch(e){}
   }, (FADE*1000)+60);
 
-  currentPlayer = 1-currentPlayer;
-  updatePlayingUI();
+  currentPlayer = 1-currentPlayer; updatePlayingUI();
 }
 
+/* controls */
 document.getElementById("play").addEventListener("click", playOrToggle);
-document.getElementById("back").addEventListener("click", ()=>{
-  const a = getCurrentAudio();
-  a.currentTime = Math.max(0, (a.currentTime||0) - 10);
-});
-document.getElementById("forward").addEventListener("click", ()=>{
-  const a = getCurrentAudio();
-  a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
-});
+document.getElementById("back").addEventListener("click", ()=>{ const a = getCurrentAudio(); a.currentTime = Math.max(0, (a.currentTime||0) - 10); });
+document.getElementById("forward").addEventListener("click", ()=>{ const a = getCurrentAudio(); a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10); });
 
-/* Shift+Scroll scrub */
+function enforceSliceVisibility(){
+  if(playingIndex === null){ line.style.opacity=0; return; }
+  if(activeIndex !== playingIndex){ line.style.opacity=0; return; }
+  if(getCurrentAudio().paused){ line.style.opacity=0; return; }
+}
+
 function scrub(deltaY){
-  if(playingIndex === null) return;
-  const a = getCurrentAudio();
+  if(playingIndex === null) return; const a = getCurrentAudio();
   if(!a || isNaN(a.currentTime)) return;
   const seconds = (deltaY / 100) * 2.0;
   a.currentTime = clamp(a.currentTime + seconds, 0, (a.duration||a.currentTime+10));
-  if(activeIndex !== playingIndex) line.style.opacity=0;
+  enforceSliceVisibility();
 }
 
 window.addEventListener("wheel",(e)=>{
-  e.preventDefault();
-  if(e.shiftKey){
-    scrub(e.deltaY);
-    return;
-  }
-  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z);
-  armSnap();
+  e.preventDefault(); if(e.shiftKey){ scrub(e.deltaY); return; }
+  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z); armSnap();
 },{passive:false});
 
 /* =========================
-   FX CANVAS — BPM reactive
-   ========================= */
-const fx = document.getElementById("fx");
-const fxc = fx.getContext("2d", { alpha:true });
-
-let fxW=0, fxH=0;
-let fxMode="normale";
-let fxModeWanted="normale";
-
-let fxBpm = 90;
-let fxFactor = bpmToFxFactor(fxBpm); // 0.75..1.35
-
-function resizeFx(){
-  fxW = fx.width = Math.floor(window.innerWidth * devicePixelRatio);
-  fxH = fx.height = Math.floor(window.innerHeight * devicePixelRatio);
-  fxc.setTransform(1,0,0,1,0,0);
-}
-window.addEventListener("resize", resizeFx);
-resizeFx();
-
-function fxSetModeAndBpm(style, bpm){
-  fxModeWanted = style || "normale";
-  fxBpm = bpm || 90;
-  fxFactor = bpmToFxFactor(fxBpm);
-}
-
-const dust = Array.from({length:160}, ()=>mkParticle("dust"));
-const fire = Array.from({length:130}, ()=>mkParticle("fire"));
-const rain = Array.from({length:180}, ()=>mkParticle("rain"));
-
-function mkParticle(kind){
-  if(kind==="dust"){
-    return {
-      x: Math.random(), y: Math.random(),
-      vx: (Math.random()*0.10 + 0.02) * (Math.random()<.5?-1:1),
-      vy: -(Math.random()*0.06 + 0.01),
-      s: 0.6 + Math.random()*1.8,
-      a: 0.06 + Math.random()*0.10
-    };
-  }
-  if(kind==="fire"){ // lucciole
-    return {
-      x: Math.random(), y: 1 + Math.random()*0.4,
-      vx: (Math.random()*0.12 + 0.02) * (Math.random()<.5?-1:1),
-      vy: -(Math.random()*0.18 + 0.06),
-      s: 1.2 + Math.random()*2.6,
-      a: 0.10 + Math.random()*0.14,
-      w: 0.6 + Math.random()*1.6,
-      ph: Math.random()*Math.PI*2
-    };
-  }
-  // rain
-  return {
-    x: Math.random(), y: Math.random(),
-    vx: 0.02 + Math.random()*0.03,
-    vy: 0.70 + Math.random()*1.10,
-    len: 0.018 + Math.random()*0.04,
-    a: 0.05 + Math.random()*0.10
-  };
-}
-
-function drawNoiseStatic(intensity){
-  // intensity: 0..1
-  const step = Math.max(6, Math.floor(10 * devicePixelRatio));
-  const imgW = fxW, imgH = fxH;
-  fxc.save();
-  fxc.globalAlpha = 0.08 + 0.10*intensity;
-  for(let y=0; y<imgH; y+=step){
-    for(let x=0; x<imgW; x+=step){
-      const v = (Math.random()*255)|0;
-      fxc.fillStyle = `rgba(${v},${v},${v},0.22)`;
-      fxc.fillRect(x,y,step,step);
-    }
-  }
-  fxc.restore();
-}
-
-function fxLoop(){
-  if(fxMode !== fxModeWanted) fxMode = fxModeWanted;
-
-  // BPM-reactive: più BPM = più trail/energia
-  const trail = clamp((fxFactor - 0.75) / 0.60, 0, 1); // 0..1
-
-  // piccolo "trail" anziché clear totale per dare energia con bpm alti
-  if(trail > 0.12){
-    fxc.fillStyle = `rgba(0,0,0,${0.10 + (1-trail)*0.08})`;
-    fxc.fillRect(0,0,fxW,fxH);
-  } else {
-    fxc.clearRect(0,0,fxW,fxH);
-  }
-
-  if(fxMode === "thriller"){
-    // rain: speed scales with fxFactor
-    fxc.save();
-    fxc.globalCompositeOperation = "screen";
-    const count = Math.floor(rain.length * (0.75 + 0.35*trail));
-    for(let i=0;i<count;i++){
-      const p = rain[i];
-      p.y += p.vy * 0.0045 * fxFactor;
-      p.x += p.vx * 0.0022 * fxFactor;
-      if(p.y > 1.05){ p.y = -0.05; p.x = Math.random(); }
-      if(p.x > 1.05) p.x = -0.05;
-      const x = p.x * fxW;
-      const y = p.y * fxH;
-      const x2 = x + p.vx * fxW * 0.02;
-      const y2 = y + p.vy * fxH * 0.03;
-      fxc.strokeStyle = `rgba(220,240,255,${p.a * (0.85 + 0.35*trail)})`;
-      fxc.lineWidth = Math.max(1, 1.2*devicePixelRatio);
-      fxc.beginPath();
-      fxc.moveTo(x,y);
-      fxc.lineTo(x2,y2);
-      fxc.stroke();
-    }
-    fxc.restore();
-
-    // static intensity scales with bpm
-    drawNoiseStatic(trail);
-  }
-  else if(fxMode === "amore"){
-    // fireflies: more bpm = more glow and speed
-    fxc.save();
-    fxc.globalCompositeOperation = "screen";
-    const count = Math.floor(fire.length * (0.75 + 0.35*trail));
-    for(let i=0;i<count;i++){
-      const p = fire[i];
-      p.ph += 0.02 * p.w * (0.85 + 0.6*trail);
-      p.x += (p.vx * 0.0012 + Math.sin(p.ph)*0.0006) * (0.85 + 0.6*trail);
-      p.y += (p.vy * 0.0012) * (0.85 + 0.6*trail);
-      if(p.y < -0.25){ p.y = 1.15; p.x = Math.random(); }
-      if(p.x < -0.1) p.x = 1.1;
-      if(p.x > 1.1) p.x = -0.1;
-
-      const x = p.x * fxW;
-      const y = p.y * fxH;
-      const r = (p.s * devicePixelRatio) * (0.8 + 0.4*Math.sin(p.ph));
-      const glow = 5.5 + 4.5*trail;
-      const grd = fxc.createRadialGradient(x,y,0,x,y,r*glow);
-      grd.addColorStop(0, `rgba(255,230,160,${p.a * (0.85 + 0.45*trail)})`);
-      grd.addColorStop(1, `rgba(255,230,160,0)`);
-      fxc.fillStyle = grd;
-      fxc.beginPath();
-      fxc.arc(x,y,r*glow,0,Math.PI*2);
-      fxc.fill();
-    }
-    fxc.restore();
-  }
-  else {
-    // normale: dust
-    fxc.save();
-    fxc.globalCompositeOperation = "screen";
-    const count = Math.floor(dust.length * (0.78 + 0.30*trail));
-    for(let i=0;i<count;i++){
-      const p = dust[i];
-      const sp = (0.85 + 0.55*trail);
-      p.x += p.vx * 0.0011 * sp;
-      p.y += p.vy * 0.0010 * sp;
-      if(p.y < -0.1){ p.y = 1.1; p.x = Math.random(); }
-      if(p.x < -0.1) p.x = 1.1;
-      if(p.x > 1.1) p.x = -0.1;
-
-      const x = p.x * fxW;
-      const y = p.y * fxH;
-      const a = p.a * (0.80 + 0.50*trail);
-      fxc.fillStyle = `rgba(220,230,255,${a})`;
-      fxc.beginPath();
-      fxc.arc(x,y,Math.max(1, p.s*devicePixelRatio*(0.9+0.25*trail)),0,Math.PI*2);
-      fxc.fill();
-    }
-    fxc.restore();
-  }
-
-  requestAnimationFrame(fxLoop);
-}
-fxLoop();
-
-/* =========================
-   RENDER LOOP + snap settle hook
+   RENDER LOOP
    ========================= */
 function updateScenes(){
   activeIndex = computeActiveIndex(cameraZ);
 
+  if(activeIndex !== lastActiveIndex){
+      const t = scenes[activeIndex].track;
+      setActiveStyle(t.style);
+      updateHUD(); updateURL(); lastActiveIndex = activeIndex;
+  }
+
   for(const s of scenes){
-    const rz = s.z + cameraZ;
-    const dist = Math.abs(rz);
+    const rz = s.z + cameraZ; const dist = Math.abs(rz);
     const t = clamp(1 - (dist/SCENE_DEPTH), 0, 1);
-    const scale = 0.70 + t*0.30;
-    const opacity = t;
+    const scale = 0.70 + t*0.30; const opacity = t; 
 
-    s.el.style.setProperty("--rz", `${rz}px`);
-    s.el.style.setProperty("--scale", `${scale}`);
-
-    if(!s.el.classList.contains("breathing")){
-      s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
-    }
-    s.el.style.opacity = opacity.toFixed(3);
+    s.el.style.setProperty("--rz", `${rz}px`); s.el.style.setProperty("--scale", `${scale}`);
+    if(!s.el.classList.contains("breathing")){ s.el.style.transform = `translateZ(${rz}px) scale(${scale})`; }
+    s.el.style.display = (opacity < 0.05) ? 'none' : 'flex'; s.el.style.opacity = opacity.toFixed(3);
   }
+  updatePlayingUI(); enforceSliceVisibility();
+}
 
-  // slice lyrics rule
-  if(playingIndex === null || activeIndex !== playingIndex || getCurrentAudio().paused){
-    line.style.opacity = 0;
-  }
-
-  updateHUD();
-  updatePlayingUI();
-
-  // BPM reactive FX based on active scene
-  const at = scenes[activeIndex].track;
-  fxSetModeAndBpm(at.style, at.bpm);
+function triggerThump(sceneIndex){
+    const s = scenes[sceneIndex];
+    if(s && s.el){ s.el.classList.remove("thump-effect"); void s.el.offsetWidth; s.el.classList.add("thump-effect"); }
 }
 
 function tick(){
-  const diff = (targetZ - cameraZ);
-  cameraZ += diff * 0.12;
+  const diff = (targetZ - cameraZ); cameraZ += diff * 0.12; 
+  if(!hasThumped && Math.abs(diff) < 20 && Math.abs(targetZ % SCENE_DEPTH) < 10) { triggerThump(activeIndex); hasThumped = true; }
   if(Math.abs(diff) < 0.35) cameraZ = targetZ;
-
-  updateScenes();
-
-  const nowIndex = Math.round(cameraZ / SCENE_DEPTH);
-  const settled = (Math.abs(targetZ-cameraZ) < 0.6) &&
-                  (Math.abs((targetZ/SCENE_DEPTH)-Math.round(targetZ/SCENE_DEPTH)) < 0.001);
-
-  if(settled){
-    if(lastSettled !== nowIndex){
-      lastSettled = nowIndex;
-      triggerThump();
-      setHashForIndex(nowIndex);
-    }
-  }
-
-  requestAnimationFrame(tick);
+  updateScenes(); requestAnimationFrame(tick);
 }
 
-/* init */
-targetZ = 0;
-cameraZ = 0;
-jumpToHashIfAny();
-updateHUD();
-updateScenes();
-requestAnimationFrame(tick);
+let mouseX=0, mouseY=0;
+window.addEventListener("mousemove", e => {
+    mouseX = (e.clientX/window.innerWidth)*2-1; mouseY = (e.clientY/window.innerHeight)*2-1;
+    world.style.transform = `rotateY(${mouseX*5}deg) rotateX(${-mouseY*5}deg)`;
+});
+
+/* Init */
+updateHUD(); updateScenes(); requestAnimationFrame(tick);
 </script>
 
 </body>
