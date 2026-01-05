@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Davide*Kra — V1</title>
+<title>Davide*Kra — Album 3D</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
@@ -44,6 +44,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
 }
 #world.thump{ animation: thump 240ms ease-out 1; }
 
+/* HUD flash */
+@keyframes hudFlash{
+  0%   { box-shadow: 0 0 0 rgba(255,255,255,0); border-color: rgba(255,255,255,.12); background: rgba(0,0,0,.30); }
+  55%  { box-shadow: 0 0 28px rgba(255,255,255,.14); border-color: rgba(255,255,255,.30); background: rgba(0,0,0,.34); }
+  100% { box-shadow: 0 0 0 rgba(255,255,255,0); border-color: rgba(255,255,255,.12); background: rgba(0,0,0,.30); }
+}
+.flash{
+  animation: hudFlash 180ms ease-out 1;
+}
+
 /* ===== SCENE ===== */
 .scene{
   position:absolute; inset:0;
@@ -79,15 +89,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff}
   top:52%;
   width:min(88vw, 980px);
   height:min(44vh, 520px);
-  transform: translateX(-50%) translateY(18vh);
+  transform: translateX(-50%) translateY(18vh) scaleY(-1);
   background-image: var(--cover-url);
   background-repeat:no-repeat;
   background-position:center top;
   background-size:contain;
   opacity:.18;
   filter: blur(1.4px) saturate(1.05);
-  transform-origin: top;
-  transform: translateX(-50%) translateY(18vh) scaleY(-1);
   mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
   z-index:1;
@@ -393,6 +401,11 @@ function pickTransition(styleKey){
   return set[(Math.random()*set.length)|0];
 }
 
+/* BPM factor for FX: 70..140 => 0.75..1.35 */
+function bpmToFxFactor(bpm){
+  const t = clamp((bpm - 70) / 70, 0, 1);
+  return 0.75 + t * 0.60;
+}
 function slugify(title){
   return (title||"")
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
@@ -412,9 +425,10 @@ function toHashTag(title){
 /* =========================
    SCENES + DEPTH
    ========================= */
-const stage = document.getElementById("stage");
 const world = document.getElementById("world");
+const stage = document.getElementById("stage");
 const SCENE_DEPTH = 2100;
+
 const scenes = tracks.map((t,i)=>{
   const el=document.createElement("div");
   el.className="scene";
@@ -439,6 +453,9 @@ const hashEl=document.getElementById("hash");
 const playerTitle=document.getElementById("playerTitle");
 const leftT=document.getElementById("leftT");
 const leftA=document.getElementById("leftA");
+const hud=document.getElementById("hud");
+const leftTitle=document.getElementById("leftTitle");
+const minimap=document.getElementById("minimap");
 
 function setActiveStyle(styleKey){ document.body.dataset.activeStyle = styleKey || "normale"; }
 
@@ -453,21 +470,20 @@ function updateHUD(){
 /* =========================
    MINIMAP (titles always visible)
    ========================= */
-const minimap=document.getElementById("minimap");
 const mmItems = scenes.map((s,i)=>{
   const row=document.createElement("div");
   row.className="mm-item";
   row.innerHTML = `<div class="mm-dot"></div><div class="mm-label">${s.track.title}</div>`;
   row.addEventListener("click", ()=>{
     targetZ = clamp(i*SCENE_DEPTH, 0, MAX_Z);
-    snapArmed = false; // già snap
+    snapArmed = false;
   });
   minimap.appendChild(row);
   return row;
 });
 
 /* =========================
-   CAMERA: inertia + snap + THUMP
+   CAMERA: inertia + snap + THUMP + deep link on settle
    ========================= */
 let cameraZ=0;
 let targetZ=0;
@@ -476,7 +492,7 @@ let activeIndex=0;
 const SPEED=0.95;
 let snapTimer=null;
 let snapArmed=false;
-let lastSnappedIndex=null;
+let lastSettled=null;
 
 function computeActiveIndex(zVal){
   let bestI=0, bestD=Infinity;
@@ -488,12 +504,22 @@ function computeActiveIndex(zVal){
   return bestI;
 }
 
+function flashHUD(){
+  // micro flash premium sui pannelli
+  [hud, leftTitle, minimap].forEach(el=>{
+    el.classList.remove("flash");
+    void el.offsetWidth;
+    el.classList.add("flash");
+    setTimeout(()=>el.classList.remove("flash"), 220);
+  });
+}
+
 function triggerThump(){
   world.classList.remove("thump");
-  // reflow
   void world.offsetWidth;
   world.classList.add("thump");
   setTimeout(()=>world.classList.remove("thump"), 260);
+  flashHUD();
 }
 
 function armSnap(){
@@ -507,21 +533,25 @@ function armSnap(){
 }
 
 /* =========================
-   DEEP LINKING (History API)
-   - on snap settle -> update hash
-   - on load -> jump to hash
+   DEEP LINKING (hash)
    ========================= */
 function setHashForIndex(i){
   const slug = scenes[i]?.slug || "";
   if(!slug) return;
   history.replaceState(null, "", `#${slug}`);
 }
-
 function readHashIndex(){
   const h = (location.hash || "").replace("#","").trim().toLowerCase();
   if(!h) return null;
   const idx = scenes.findIndex(s => s.slug === h);
   return idx >= 0 ? idx : null;
+}
+function jumpToHashIfAny(){
+  const idx = readHashIndex();
+  if(idx === null) return;
+  targetZ = clamp(idx*SCENE_DEPTH, 0, MAX_Z);
+  cameraZ = targetZ;
+  lastSettled = idx;
 }
 
 /* =========================
@@ -589,8 +619,6 @@ function bindKaraokeTo(playerEl, trackObj){
 
     const refresh=()=>{
       if(mySession !== vttSession) return;
-
-      // testo SOLO se sono nello "spicchio" della traccia in play
       if(playingIndex === null || activeIndex !== playingIndex) { line.style.opacity=0; return; }
       if(getCurrentAudio().paused) { line.style.opacity=0; return; }
 
@@ -726,7 +754,6 @@ async function crossfadeTo(nextIndex){
   updatePlayingUI();
 }
 
-/* controls */
 document.getElementById("play").addEventListener("click", playOrToggle);
 document.getElementById("back").addEventListener("click", ()=>{
   const a = getCurrentAudio();
@@ -737,9 +764,7 @@ document.getElementById("forward").addEventListener("click", ()=>{
   a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
 });
 
-/* =========================
-   Shift+Scroll scrub
-   ========================= */
+/* Shift+Scroll scrub */
 function scrub(deltaY){
   if(playingIndex === null) return;
   const a = getCurrentAudio();
@@ -755,111 +780,12 @@ window.addEventListener("wheel",(e)=>{
     scrub(e.deltaY);
     return;
   }
-  targetZ = clamp(targetZ + e.deltaY * 0.95, 0, MAX_Z);
+  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z);
   armSnap();
 },{passive:false});
 
 /* =========================
-   SCENE RENDER LOOP + snap settle hook
-   ========================= */
-function updateScenes(){
-  activeIndex = computeActiveIndex(cameraZ);
-
-  // scene transforms
-  for(const s of scenes){
-    const rz = s.z + cameraZ;
-    const dist = Math.abs(rz);
-    const t = clamp(1 - (dist/SCENE_DEPTH), 0, 1);
-    const scale = 0.70 + t*0.30;
-    const opacity = t;
-
-    s.el.style.setProperty("--rz", `${rz}px`);
-    s.el.style.setProperty("--scale", `${scale}`);
-
-    if(!s.el.classList.contains("breathing")){
-      s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
-    }
-    s.el.style.opacity = opacity.toFixed(3);
-  }
-
-  // slice lyrics rule
-  if(playingIndex === null || activeIndex !== playingIndex || getCurrentAudio().paused){
-    line.style.opacity = 0;
-  }
-
-  updateHUD();
-  updatePlayingUI();
-
-  // FX per stile basato su scena attiva
-  fxSetMode(scenes[activeIndex].track.style);
-}
-
-/* snap settle detection */
-let lastSettled = null;
-function tick(){
-  const diff = (targetZ - cameraZ);
-  cameraZ += diff * 0.12;
-  if(Math.abs(diff) < 0.35) cameraZ = targetZ;
-
-  updateScenes();
-
-  // quando "si ferma" nello snap, applica thump + deep link (una sola volta)
-  const nowIndex = Math.round(cameraZ / SCENE_DEPTH);
-  const settled = (Math.abs(targetZ-cameraZ) < 0.6) && (Math.abs((targetZ/SCENE_DEPTH)-Math.round(targetZ/SCENE_DEPTH)) < 0.001);
-
-  if(settled){
-    if(lastSettled !== nowIndex){
-      lastSettled = nowIndex;
-      triggerThump();
-      setHashForIndex(nowIndex);
-    }
-  }
-
-  requestAnimationFrame(tick);
-}
-
-/* deep link on load */
-function jumpToHashIfAny(){
-  const idx = readHashIndex();
-  if(idx === null) return;
-  targetZ = clamp(idx*SCENE_DEPTH, 0, MAX_Z);
-  cameraZ = targetZ; // jump immediato (pulito)
-  lastSettled = idx;
-}
-
-function setHashForIndex(i){
-  const slug = scenes[i]?.slug || "";
-  if(!slug) return;
-  history.replaceState(null, "", `#${slug}`);
-}
-function readHashIndex(){
-  const h = (location.hash || "").replace("#","").trim().toLowerCase();
-  if(!h) return null;
-  const idx = scenes.findIndex(s => s.slug === h);
-  return idx >= 0 ? idx : null;
-}
-
-/* thump */
-function triggerThump(){
-  world.classList.remove("thump");
-  void world.offsetWidth;
-  world.classList.add("thump");
-  setTimeout(()=>world.classList.remove("thump"), 260);
-}
-
-/* init */
-targetZ = 0;
-cameraZ = 0;
-jumpToHashIfAny();
-updateHUD();
-updateScenes();
-requestAnimationFrame(tick);
-
-/* =========================
-   FX CANVAS — per stile
-   thriller: rain + static
-   normale: dust
-   amore: fireflies
+   FX CANVAS — BPM reactive
    ========================= */
 const fx = document.getElementById("fx");
 const fxc = fx.getContext("2d", { alpha:true });
@@ -867,6 +793,9 @@ const fxc = fx.getContext("2d", { alpha:true });
 let fxW=0, fxH=0;
 let fxMode="normale";
 let fxModeWanted="normale";
+
+let fxBpm = 90;
+let fxFactor = bpmToFxFactor(fxBpm); // 0.75..1.35
 
 function resizeFx(){
   fxW = fx.width = Math.floor(window.innerWidth * devicePixelRatio);
@@ -876,16 +805,17 @@ function resizeFx(){
 window.addEventListener("resize", resizeFx);
 resizeFx();
 
-function fxSetMode(m){
-  fxModeWanted = m || "normale";
+function fxSetModeAndBpm(style, bpm){
+  fxModeWanted = style || "normale";
+  fxBpm = bpm || 90;
+  fxFactor = bpmToFxFactor(fxBpm);
 }
 
-const dust = Array.from({length:140}, ()=>mkParticle("dust"));
-const fire = Array.from({length:110}, ()=>mkParticle("fire"));
-const rain = Array.from({length:160}, ()=>mkParticle("rain"));
+const dust = Array.from({length:160}, ()=>mkParticle("dust"));
+const fire = Array.from({length:130}, ()=>mkParticle("fire"));
+const rain = Array.from({length:180}, ()=>mkParticle("rain"));
 
 function mkParticle(kind){
-  const r = Math.random();
   if(kind==="dust"){
     return {
       x: Math.random(), y: Math.random(),
@@ -916,12 +846,12 @@ function mkParticle(kind){
   };
 }
 
-function drawNoiseStatic(){
-  // static leggero: pochi sample per performance
+function drawNoiseStatic(intensity){
+  // intensity: 0..1
   const step = Math.max(6, Math.floor(10 * devicePixelRatio));
   const imgW = fxW, imgH = fxH;
   fxc.save();
-  fxc.globalAlpha = 0.12;
+  fxc.globalAlpha = 0.08 + 0.10*intensity;
   for(let y=0; y<imgH; y+=step){
     for(let x=0; x<imgW; x+=step){
       const v = (Math.random()*255)|0;
@@ -933,25 +863,35 @@ function drawNoiseStatic(){
 }
 
 function fxLoop(){
-  // smooth mode switch
   if(fxMode !== fxModeWanted) fxMode = fxModeWanted;
 
-  fxc.clearRect(0,0,fxW,fxH);
+  // BPM-reactive: più BPM = più trail/energia
+  const trail = clamp((fxFactor - 0.75) / 0.60, 0, 1); // 0..1
+
+  // piccolo "trail" anziché clear totale per dare energia con bpm alti
+  if(trail > 0.12){
+    fxc.fillStyle = `rgba(0,0,0,${0.10 + (1-trail)*0.08})`;
+    fxc.fillRect(0,0,fxW,fxH);
+  } else {
+    fxc.clearRect(0,0,fxW,fxH);
+  }
 
   if(fxMode === "thriller"){
-    // rain
+    // rain: speed scales with fxFactor
     fxc.save();
     fxc.globalCompositeOperation = "screen";
-    for(const p of rain){
-      p.y += p.vy * 0.0045;
-      p.x += p.vx * 0.0022;
+    const count = Math.floor(rain.length * (0.75 + 0.35*trail));
+    for(let i=0;i<count;i++){
+      const p = rain[i];
+      p.y += p.vy * 0.0045 * fxFactor;
+      p.x += p.vx * 0.0022 * fxFactor;
       if(p.y > 1.05){ p.y = -0.05; p.x = Math.random(); }
       if(p.x > 1.05) p.x = -0.05;
       const x = p.x * fxW;
       const y = p.y * fxH;
       const x2 = x + p.vx * fxW * 0.02;
       const y2 = y + p.vy * fxH * 0.03;
-      fxc.strokeStyle = `rgba(220,240,255,${p.a})`;
+      fxc.strokeStyle = `rgba(220,240,255,${p.a * (0.85 + 0.35*trail)})`;
       fxc.lineWidth = Math.max(1, 1.2*devicePixelRatio);
       fxc.beginPath();
       fxc.moveTo(x,y);
@@ -960,17 +900,19 @@ function fxLoop(){
     }
     fxc.restore();
 
-    // static tv
-    drawNoiseStatic();
+    // static intensity scales with bpm
+    drawNoiseStatic(trail);
   }
   else if(fxMode === "amore"){
-    // lucciole
+    // fireflies: more bpm = more glow and speed
     fxc.save();
     fxc.globalCompositeOperation = "screen";
-    for(const p of fire){
-      p.ph += 0.02 * p.w;
-      p.x += p.vx * 0.0012 + Math.sin(p.ph)*0.0006;
-      p.y += p.vy * 0.0012;
+    const count = Math.floor(fire.length * (0.75 + 0.35*trail));
+    for(let i=0;i<count;i++){
+      const p = fire[i];
+      p.ph += 0.02 * p.w * (0.85 + 0.6*trail);
+      p.x += (p.vx * 0.0012 + Math.sin(p.ph)*0.0006) * (0.85 + 0.6*trail);
+      p.y += (p.vy * 0.0012) * (0.85 + 0.6*trail);
       if(p.y < -0.25){ p.y = 1.15; p.x = Math.random(); }
       if(p.x < -0.1) p.x = 1.1;
       if(p.x > 1.1) p.x = -0.1;
@@ -978,12 +920,13 @@ function fxLoop(){
       const x = p.x * fxW;
       const y = p.y * fxH;
       const r = (p.s * devicePixelRatio) * (0.8 + 0.4*Math.sin(p.ph));
-      const grd = fxc.createRadialGradient(x,y,0,x,y,r*6);
-      grd.addColorStop(0, `rgba(255,230,160,${p.a})`);
+      const glow = 5.5 + 4.5*trail;
+      const grd = fxc.createRadialGradient(x,y,0,x,y,r*glow);
+      grd.addColorStop(0, `rgba(255,230,160,${p.a * (0.85 + 0.45*trail)})`);
       grd.addColorStop(1, `rgba(255,230,160,0)`);
       fxc.fillStyle = grd;
       fxc.beginPath();
-      fxc.arc(x,y,r*6,0,Math.PI*2);
+      fxc.arc(x,y,r*glow,0,Math.PI*2);
       fxc.fill();
     }
     fxc.restore();
@@ -992,18 +935,22 @@ function fxLoop(){
     // normale: dust
     fxc.save();
     fxc.globalCompositeOperation = "screen";
-    for(const p of dust){
-      p.x += p.vx * 0.0011;
-      p.y += p.vy * 0.0010;
+    const count = Math.floor(dust.length * (0.78 + 0.30*trail));
+    for(let i=0;i<count;i++){
+      const p = dust[i];
+      const sp = (0.85 + 0.55*trail);
+      p.x += p.vx * 0.0011 * sp;
+      p.y += p.vy * 0.0010 * sp;
       if(p.y < -0.1){ p.y = 1.1; p.x = Math.random(); }
       if(p.x < -0.1) p.x = 1.1;
       if(p.x > 1.1) p.x = -0.1;
 
       const x = p.x * fxW;
       const y = p.y * fxH;
-      fxc.fillStyle = `rgba(220,230,255,${p.a})`;
+      const a = p.a * (0.80 + 0.50*trail);
+      fxc.fillStyle = `rgba(220,230,255,${a})`;
       fxc.beginPath();
-      fxc.arc(x,y,Math.max(1, p.s*devicePixelRatio),0,Math.PI*2);
+      fxc.arc(x,y,Math.max(1, p.s*devicePixelRatio*(0.9+0.25*trail)),0,Math.PI*2);
       fxc.fill();
     }
     fxc.restore();
@@ -1012,6 +959,71 @@ function fxLoop(){
   requestAnimationFrame(fxLoop);
 }
 fxLoop();
+
+/* =========================
+   RENDER LOOP + snap settle hook
+   ========================= */
+function updateScenes(){
+  activeIndex = computeActiveIndex(cameraZ);
+
+  for(const s of scenes){
+    const rz = s.z + cameraZ;
+    const dist = Math.abs(rz);
+    const t = clamp(1 - (dist/SCENE_DEPTH), 0, 1);
+    const scale = 0.70 + t*0.30;
+    const opacity = t;
+
+    s.el.style.setProperty("--rz", `${rz}px`);
+    s.el.style.setProperty("--scale", `${scale}`);
+
+    if(!s.el.classList.contains("breathing")){
+      s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
+    }
+    s.el.style.opacity = opacity.toFixed(3);
+  }
+
+  // slice lyrics rule
+  if(playingIndex === null || activeIndex !== playingIndex || getCurrentAudio().paused){
+    line.style.opacity = 0;
+  }
+
+  updateHUD();
+  updatePlayingUI();
+
+  // BPM reactive FX based on active scene
+  const at = scenes[activeIndex].track;
+  fxSetModeAndBpm(at.style, at.bpm);
+}
+
+function tick(){
+  const diff = (targetZ - cameraZ);
+  cameraZ += diff * 0.12;
+  if(Math.abs(diff) < 0.35) cameraZ = targetZ;
+
+  updateScenes();
+
+  const nowIndex = Math.round(cameraZ / SCENE_DEPTH);
+  const settled = (Math.abs(targetZ-cameraZ) < 0.6) &&
+                  (Math.abs((targetZ/SCENE_DEPTH)-Math.round(targetZ/SCENE_DEPTH)) < 0.001);
+
+  if(settled){
+    if(lastSettled !== nowIndex){
+      lastSettled = nowIndex;
+      triggerThump();
+      setHashForIndex(nowIndex);
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
+
+/* init */
+targetZ = 0;
+cameraZ = 0;
+jumpToHashIfAny();
+updateHUD();
+updateScenes();
+requestAnimationFrame(tick);
 </script>
 
 </body>
