@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Davide*Kra — Album 3D V5 (Real Rain)</title>
+<title>Davide*Kra — Album 3D V7 (Interlude Added)</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 
@@ -14,41 +14,41 @@ html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
   --hudTx: rgba(255,255,255,.9);
 }
 
-/* ===== CANVAS BG (Qui avviene la pioggia/movimento) ===== */
+/* ===== CANVAS BG (Motore Fisico) ===== */
 #bg-canvas {
   position: fixed; inset: 0;
-  z-index: 1; /* Dietro al 3D, ma visibile */
+  z-index: 1; 
   pointer-events: none;
 }
 
-/* ===== FX LAYER (Solo colori e vignette statiche) ===== */
+/* ===== FX LAYER (Colori e Atmosfera) ===== */
 #fx-layer {
   position: fixed; inset: 0;
-  z-index: 20; /* Sopra tutto per colorare la scena */
+  z-index: 20; 
   pointer-events: none;
   transition: all 0.5s ease;
   mix-blend-mode: overlay;
 }
 
-/* --- FX: THRILLER (Cupo + Contrasto per far risaltare la pioggia) --- */
+/* THRILLER: Scuro + Contrasto */
 body[data-active-style="thriller"] #fx-layer {
   background: radial-gradient(circle at center, transparent 30%, #000 120%);
   box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
   filter: contrast(1.2) brightness(0.9) sepia(0.2);
 }
 
-/* --- FX: AMORE (Glow Rosa) --- */
+/* AMORE: Glow Rosa Intenso */
 body[data-active-style="amore"] #fx-layer {
-  background: radial-gradient(circle, rgba(255,192,203,0.15) 0%, rgba(100,0,50,0.5) 90%);
-  filter: blur(0.5px) brightness(1.1);
-  animation: lovePulse 5s infinite;
+  background: radial-gradient(circle, rgba(255,100,150,0.2) 0%, rgba(50,0,20,0.6) 90%);
+  filter: blur(0.5px) brightness(1.2) contrast(1.1);
+  animation: lovePulse 4s infinite;
 }
-@keyframes lovePulse { 0% {opacity:0.7} 50% {opacity:1} 100% {opacity:0.7} }
+@keyframes lovePulse { 0% {opacity:0.8} 50% {opacity:1} 100% {opacity:0.8} }
 
-/* --- FX: NORMALE (Pulito) --- */
+/* NORMALE: Bluastro Tecnico */
 body[data-active-style="normale"] #fx-layer {
-  background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent);
-  opacity: 0.3;
+  background: radial-gradient(circle, rgba(200,200,255,0.05) 0%, transparent 80%);
+  opacity: 0.5;
 }
 
 /* ===== STAGE ===== */
@@ -60,7 +60,7 @@ body[data-active-style="normale"] #fx-layer {
 }
 #world{position:absolute; inset:0; transform-style:preserve-3d;}
 
-/* ===== SCENE & REFLECTION ===== */
+/* ===== SCENE ===== */
 .scene{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
@@ -301,6 +301,16 @@ const tracks = [
     cover:"https://i.ibb.co/yndKknVM/2-cose-insieme.png",
     audio:"DavideKra - 03 - 2 Cose Insieme.mp3",
     vtt:"DavideKra - 03 - 2 Cose Insieme.vtt"
+  },
+  {
+    artist:"Davide*Kra",
+    title:"Interlude 01",
+    slug: "interlude-01",
+    bpm: 91,
+    style: "normale",
+    cover: "https://i.ibb.co/C52MZskD/Interlude-01.png",
+    audio: "DavideKra - 04 - Interlude.mp3",
+    vtt: "DavideKra - 04 - Interlude.vtt"
   }
 ];
 
@@ -327,7 +337,7 @@ function pickTransition(styleKey){
 }
 
 /* =========================
-   CANVAS SYSTEM (REAL PHYSICS)
+   CANVAS PARTICLES SYSTEM V6
    ========================= */
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
@@ -350,83 +360,152 @@ class Particle {
         this.life = Math.random() * 100;
         
         if (style === 'thriller') {
-            // PIOGGIA VERA
-            this.vx = -1 + Math.random() * 0.5; // Leggero vento verso sx
-            this.vy = 15 + Math.random() * 10;  // Cade veloce
-            this.length = 15 + Math.random() * 20; // Lunghezza scia
-            this.y = Math.random() * -ch; // Parte dall'alto
-            this.alpha = 0.2 + Math.random() * 0.3;
+            // PIOGGIA
+            this.vx = -1.5 + Math.random(); 
+            this.vy = 18 + Math.random() * 12;  
+            this.length = 20 + Math.random() * 30; 
+            this.y = Math.random() * -ch; 
+            this.alpha = 0.2 + Math.random() * 0.4;
+
         } else if (style === 'amore') {
-            // LUCCIOLE
-            this.vx = (Math.random() - 0.5) * 0.5;
-            this.vy = -0.5 - Math.random(); // Sale piano
-            this.size = 2 + Math.random() * 5;
-            this.y = ch + Math.random() * 100; 
-            this.alpha = 0.2 + Math.random() * 0.5;
+            // AMORE: Mix di Petali (70%) e Lucciole (30%)
+            this.isPetal = Math.random() > 0.3; 
+            
+            if(this.isPetal){
+                this.vx = (Math.random() - 0.5) * 2; // Dondola
+                this.vy = 1 + Math.random() * 2;     // Cade
+                this.size = 6 + Math.random() * 8;   // Grandi
+                this.angle = Math.random() * Math.PI * 2;
+                this.spin = (Math.random() - 0.5) * 0.05;
+                this.y = Math.random() * -ch;
+                // Colori Petali: Rosso, Rosa scuro, Rosa chiaro
+                const tones = ["220, 20, 60", "255, 105, 180", "255, 192, 203"];
+                this.color = tones[Math.floor(Math.random()*tones.length)];
+                this.alpha = 0.6 + Math.random() * 0.4;
+            } else {
+                // Lucciole
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.size = 2 + Math.random() * 3;
+                this.alpha = 0; // Parte invisibile e pulsa
+                this.pulseSpeed = 0.02 + Math.random()*0.03;
+            }
+
         } else {
-            // POLVERE
-            this.vx = (Math.random() - 0.5) * 0.2;
-            this.vy = (Math.random() - 0.5) * 0.2;
-            this.size = 0.5 + Math.random();
-            this.alpha = 0.1 + Math.random() * 0.3;
+            // NORMALE: Geometria (Quadrati, Triangoli, Cerchi)
+            this.vx = (Math.random() - 0.5) * 0.6;
+            this.vy = (Math.random() - 0.5) * 0.6;
+            this.size = 10 + Math.random() * 20; // Grandi forme
+            this.angle = Math.random() * Math.PI * 2;
+            this.spin = (Math.random() - 0.5) * 0.02;
+            this.alpha = 0.3 + Math.random() * 0.4;
+            const shapes = ['square', 'triangle', 'circle'];
+            this.shapeType = shapes[Math.floor(Math.random()*shapes.length)];
         }
     }
+
     update() {
-        this.x += this.vx;
-        this.y += this.vy;
         this.life++;
         
         if(this.style === 'thriller') {
-            // Loop pioggia
-            if (this.y > ch) { 
-                this.y = -50; 
-                this.x = Math.random() * cw + 100; // Sposta un po' per il vento
-            }
+            this.x += this.vx; this.y += this.vy;
+            if (this.y > ch) { this.y = -50; this.x = Math.random() * cw; }
+        
         } else if (this.style === 'amore') {
-            if (this.y < -10) { this.y = ch + 10; this.x = Math.random() * cw; }
-            this.x += Math.sin(this.y * 0.01) * 0.3; 
+            if(this.isPetal){
+                this.y += this.vy;
+                this.x += Math.sin(this.life * 0.02 + this.angle) * 1.5; // Dondolio evidente
+                this.angle += this.spin;
+                if (this.y > ch) { this.y = -20; this.x = Math.random() * cw; }
+            } else {
+                // Lucciole
+                this.x += this.vx; this.y += this.vy;
+                // Loop bordi
+                if (this.x < 0) this.x = cw; if (this.x > cw) this.x = 0;
+                if (this.y < 0) this.y = ch; if (this.y > ch) this.y = 0;
+                // Pulsazione
+                this.alpha = 0.5 + Math.sin(this.life * this.pulseSpeed) * 0.5;
+            }
+
         } else {
-            if (this.x < 0) this.x = cw; if (this.x > cw) this.x = 0;
-            if (this.y < 0) this.y = ch; if (this.y > ch) this.y = 0;
+            // Geometria
+            this.x += this.vx; this.y += this.vy;
+            this.angle += this.spin;
+            if (this.x < -50) this.x = cw+50; if (this.x > cw+50) this.x = -50;
+            if (this.y < -50) this.y = ch+50; if (this.y > ch+50) this.y = -50;
         }
     }
+
     draw() {
-        ctx.beginPath();
-        if (this.style === 'thriller') {
-            // Disegna PIOGGIA (linee)
-            ctx.strokeStyle = `rgba(170, 180, 200, ${this.alpha})`;
-            ctx.lineWidth = 1;
+        if(this.style === 'thriller') {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(180, 190, 210, ${this.alpha})`;
+            ctx.lineWidth = 1.5;
             ctx.moveTo(this.x, this.y);
             ctx.lineTo(this.x + this.vx, this.y + this.length);
             ctx.stroke();
+
         } else if (this.style === 'amore') {
-            const pulsate = 0.5 + Math.abs(Math.sin(this.life * 0.03)) * 0.5;
-            ctx.fillStyle = `rgba(255, 150, 180, ${this.alpha * pulsate})`;
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-            ctx.shadowBlur = 15; 
-            ctx.shadowColor = "rgba(255, 100, 150, 0.8)";
-            ctx.fill();
-            ctx.shadowBlur = 0;
+            if(this.isPetal){
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                // Disegna ovale (petalo)
+                ctx.ellipse(0, 0, this.size/2, this.size, 0, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.fill();
+                ctx.restore();
+            } else {
+                // Lucciola (Glow)
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255, 215, 0, ${this.alpha})`;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "rgba(255, 200, 50, 1)";
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
         } else {
-            ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-            ctx.fill();
+            // Geometria
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha})`;
+            ctx.lineWidth = 2;
+
+            if(this.shapeType === 'square'){
+                ctx.rect(-this.size/2, -this.size/2, this.size, this.size);
+            } else if (this.shapeType === 'circle'){
+                ctx.arc(0, 0, this.size/2, 0, Math.PI*2);
+            } else if (this.shapeType === 'triangle'){
+                ctx.moveTo(0, -this.size/2);
+                ctx.lineTo(this.size/2, this.size/2);
+                ctx.lineTo(-this.size/2, this.size/2);
+                ctx.closePath();
+            }
+            ctx.stroke();
+            ctx.restore();
         }
     }
 }
 
-// Inizializza un numero diverso di particelle in base allo stile (più pioggia)
-let particleCount = 150; 
-for(let i=0; i<particleCount; i++) particles.push(new Particle('normale'));
+let particles = [];
+for(let i=0; i<100; i++) particles.push(new Particle('normale'));
 
 function updateCanvasEffect(newStyle){ 
-    // Se thriller, aumentiamo le particelle per fare pioggia fitta
-    if(newStyle === 'thriller') {
-        while(particles.length < 400) particles.push(new Particle(newStyle));
-    } else {
-        // Riduciamo per gli altri stili
-        particles = particles.slice(0, 150);
-    }
+    // Regola numero particelle in base allo stile
+    let targetCount = 120; // Default
+    if(newStyle === 'thriller') targetCount = 350; // Tanta pioggia
+    if(newStyle === 'amore') targetCount = 100;    // Petali + lucciole equilibrati
+    if(newStyle === 'normale') targetCount = 60;   // Meno forme ma grandi
+
+    // Aggiungi o rimuovi array
+    while(particles.length < targetCount) particles.push(new Particle(newStyle));
+    while(particles.length > targetCount) particles.pop();
+
     particles.forEach(p => p.reset(newStyle)); 
 }
 
@@ -567,9 +646,7 @@ function ensureAudioGraph(){
 }
 
 function setActiveStyle(styleKey){
-  // Questo aggiorna il dataset del body, attivando i CSS FX (distorsione, vignettatura)
   document.body.dataset.activeStyle = styleKey || "normale";
-  // Questo aggiorna le particelle del canvas
   updateCanvasEffect(styleKey || "normale");
 }
 
