@@ -12,8 +12,8 @@
    ===================== */
 :root{
   --fg:#ffffff;
-  --overlay:rgba(0,0,0,.65);
-  --accent:#7c5cff;
+  --muted:rgba(255,255,255,.6);
+  --overlay:rgba(0,0,0,.7);
 }
 
 *{box-sizing:border-box}
@@ -30,11 +30,36 @@ body{
 
   background-color:#000;
   background-image:
-    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.8)),
+    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.85)),
     url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
+}
+
+/* =====================
+   TITLE
+   ===================== */
+header{
+  position:fixed;
+  top:32px;
+  left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  z-index:5;
+}
+
+header h1{
+  margin:0;
+  font-size:clamp(26px,4vw,42px);
+  font-weight:800;
+  letter-spacing:.4px;
+}
+
+header .subtitle{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
 }
 
 /* =====================
@@ -57,47 +82,45 @@ body{
   font-weight:800;
   line-height:1.25;
   text-shadow:
-    0 10px 40px rgba(0,0,0,.85),
-    0 0 20px rgba(0,0,0,.4);
+    0 10px 40px rgba(0,0,0,.9),
+    0 0 20px rgba(0,0,0,.5);
   opacity:0;
   transition:all .6s ease;
 }
 
 /* =====================
-   PLAYER BAR
+   PLAYER (MINIMAL)
    ===================== */
-#audio{ display:none }
+#audio{display:none}
 
 #controls{
   position:fixed;
+  bottom:28px;
   left:50%;
-  bottom:24px;
   transform:translateX(-50%);
   display:flex;
-  align-items:center;
-  gap:14px;
-  padding:14px 22px;
-  background:rgba(0,0,0,.55);
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.25);
-  border-radius:999px;
+  gap:22px;
+  font-size:13px;
+  color:var(--muted);
   z-index:10;
 }
 
-.ctrl{
+#controls button{
   background:none;
   border:none;
-  color:white;
-  font-size:18px;
-  font-weight:700;
+  color:inherit;
   cursor:pointer;
-  padding:6px 10px;
+  padding:0;
+  font-family:inherit;
 }
 
-.ctrl:hover{ transform:scale(1.15) }
+#controls button:hover{
+  color:#fff;
+  text-decoration:underline;
+}
 
 /* =====================
-   FIRST PLAY OVERLAY
+   START OVERLAY
    ===================== */
 #hint{
   position:fixed;
@@ -106,8 +129,8 @@ body{
   align-items:center;
   justify-content:center;
   background:rgba(0,0,0,.65);
-  font-size:22px;
-  font-weight:800;
+  font-size:18px;
+  font-weight:700;
   cursor:pointer;
   z-index:20;
 }
@@ -116,7 +139,7 @@ body{
    TRANSITIONS (10)
    ===================== */
 .t-fade-in{opacity:1;transform:scale(1)}
-.t-fade-out{opacity:0;transform:scale(.9)}
+.t-fade-out{opacity:0;transform:scale(.92)}
 
 .t-slide-up-in{opacity:1;transform:translateY(0)}
 .t-slide-up-out{opacity:0;transform:translateY(40px)}
@@ -125,13 +148,13 @@ body{
 .t-slide-down-out{opacity:0;transform:translateY(-40px)}
 
 .t-blur-in{opacity:1;filter:blur(0)}
-.t-blur-out{opacity:0;filter:blur(12px)}
+.t-blur-out{opacity:0;filter:blur(14px)}
 
 .t-zoom-in{opacity:1;transform:scale(1)}
-.t-zoom-out{opacity:0;transform:scale(1.15)}
+.t-zoom-out{opacity:0;transform:scale(1.18)}
 
 .t-rotate-in{opacity:1;transform:rotate(0deg) scale(1)}
-.t-rotate-out{opacity:0;transform:rotate(-2deg) scale(.95)}
+.t-rotate-out{opacity:0;transform:rotate(-2deg) scale(.94)}
 
 .t-flicker-in{opacity:1}
 .t-flicker-out{opacity:0}
@@ -145,29 +168,31 @@ body{
 .t-glow-in{
   opacity:1;
   text-shadow:
-    0 0 40px rgba(124,92,255,.9),
-    0 0 20px rgba(124,92,255,.5);
+    0 0 40px rgba(255,255,255,.9),
+    0 0 20px rgba(255,255,255,.5);
 }
-.t-glow-out{
-  opacity:0;
-  text-shadow:none;
-}
+.t-glow-out{opacity:0;text-shadow:none}
 </style>
 </head>
 
 <body>
 
+<header>
+  <h1>Sai tenere un segreto?</h1>
+  <div class="subtitle">DavideKra</div>
+</header>
+
 <div id="stage">
-  <div id="line"></div>
+  <div id="line">Ascolta…</div>
 </div>
 
 <div id="controls">
-  <button class="ctrl" id="back">⏪ −10s</button>
-  <button class="ctrl" id="play">▶</button>
-  <button class="ctrl" id="forward">+10s ⏩</button>
+  <button id="back">−10s</button>
+  <button id="play">play</button>
+  <button id="forward">+10s</button>
 </div>
 
-<div id="hint">▶ Tocca per iniziare</div>
+<div id="hint">clicca per iniziare</div>
 
 <audio id="audio" preload="metadata">
   <source src="DavideKra - 02 - Sai Tenere Un Segreto.mp3" type="audio/mpeg">
@@ -179,7 +204,7 @@ body{
 <script>
 const audio = document.getElementById("audio");
 const lineEl = document.getElementById("line");
-const hint   = document.getElementById("hint");
+const hint = document.getElementById("hint");
 
 const btnPlay = document.getElementById("play");
 const btnBack = document.getElementById("back");
@@ -196,27 +221,28 @@ function randomTransition(){
   return transitions[Math.floor(Math.random()*transitions.length)];
 }
 
-/* FIRST PLAY */
+/* START */
 hint.addEventListener("click", async ()=>{
   await audio.play();
   hint.style.display="none";
-  btnPlay.textContent="⏸";
+  btnPlay.textContent="pause";
 });
 
 /* PLAY / PAUSE */
 btnPlay.addEventListener("click", ()=>{
   if(audio.paused){
     audio.play();
-    btnPlay.textContent="⏸";
+    btnPlay.textContent="pause";
   }else{
     audio.pause();
-    btnPlay.textContent="▶";
+    btnPlay.textContent="play";
   }
 });
 
 /* SEEK */
 btnBack.onclick = ()=> audio.currentTime=Math.max(0,audio.currentTime-10);
 btnForw.onclick = ()=> audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
+audio.addEventListener("seeked", ()=> lastCue=null);
 
 /* KARAOKE */
 audio.addEventListener("loadedmetadata", ()=>{
@@ -224,21 +250,22 @@ audio.addEventListener("loadedmetadata", ()=>{
   track.mode="hidden";
 
   track.addEventListener("cuechange", ()=>{
-    if(!track.activeCues.length) return;
+    if(!track.activeCues.length){
+      lineEl.textContent="…";
+      lineEl.className="t-fade-in";
+      return;
+    }
 
     const cue = track.activeCues[0];
     if(cue===lastCue) return;
     lastCue = cue;
 
     const t = randomTransition();
-
-    lineEl.className="";
-    lineEl.classList.add(`t-${t}-out`);
+    lineEl.className=`t-${t}-out`;
 
     setTimeout(()=>{
-      lineEl.textContent = cue.text;
-      lineEl.className="";
-      lineEl.classList.add(`t-${t}-in`);
+      lineEl.textContent=cue.text;
+      lineEl.className=`t-${t}-in`;
     },300);
   });
 });
