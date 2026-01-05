@@ -6,7 +6,7 @@
 <title>Sai tenere un segreto?</title>
 
 <!-- FONTS -->
-<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Rubik+Dirt&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -18,36 +18,38 @@
 html,body{margin:0;height:100%}
 
 body{
-  font-family:Inter, system-ui, sans-serif;
+  font-family:'Rubik Dirt', system-ui, sans-serif;
   color:var(--fg);
   overflow:hidden;
   background:#000;
 }
 
 /* =====================
-   BACKGROUND (BREATHING)
+   BACKGROUND (RESPIRA FORTE)
    ===================== */
 #bg{
   position:fixed;
   inset:0;
   z-index:0;
   background-image:
-    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.85)),
+    linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.88)),
     url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-  animation:bgZoom 26s ease-in-out infinite;
+
+  /* più veloce + più ampio */
+  animation:bgZoom 14s cubic-bezier(.4,0,.6,1) infinite;
 }
 
 @keyframes bgZoom{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.14)}
-  100%{transform:scale(1)}
+  0%   { transform:scale(1); }
+  50%  { transform:scale(1.22); }
+  100% { transform:scale(1); }
 }
 
 /* =====================
-   INTRO (HOME CLEAN)
+   INTRO (HOME)
    ===================== */
 #intro{
   position:fixed;
@@ -56,7 +58,7 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
-  background:rgba(0,0,0,.55);
+  background:rgba(0,0,0,.6);
 }
 
 #intro h1{
@@ -101,16 +103,19 @@ body{
 }
 
 #line{
+  font-family:'Rubik Dirt', cursive;
   max-width:1100px;
   text-align:center;
-  font-size:clamp(32px,5vw,60px);
-  font-weight:800;
+  font-size:clamp(34px,5vw,62px);
   line-height:1.25;
   text-shadow:
     0 12px 44px rgba(0,0,0,.95),
-    0 0 12px rgba(0,0,0,.7);
+    0 0 14px rgba(0,0,0,.7);
   opacity:0;
-  transition:transform .5s ease, filter .5s ease, opacity .4s ease;
+  transition:
+    transform .45s ease,
+    filter .45s ease,
+    opacity .35s ease;
 }
 
 /* =====================
@@ -123,7 +128,7 @@ body{
   bottom:26px;
   left:50%;
   transform:translateX(-50%);
-  display:none; /* nascosto fino al play */
+  display:none;
   gap:24px;
   font-size:13px;
   color:var(--muted);
@@ -147,13 +152,13 @@ body{
    TRANSITIONS
    ===================== */
 .fade{opacity:1;transform:none}
-.slide-up{opacity:1;transform:translateY(40px)}
-.slide-down{opacity:1;transform:translateY(-40px)}
-.zoom{opacity:1;transform:scale(1.15)}
-.blur{opacity:1;filter:blur(12px)}
-.rotate{opacity:1;transform:rotate(-2deg) scale(.95)}
-.stretch{opacity:1;transform:scaleY(.6)}
-.slide-x{opacity:1;transform:translateX(-60px)}
+.slide-up{opacity:1;transform:translateY(48px)}
+.slide-down{opacity:1;transform:translateY(-48px)}
+.zoom{opacity:1;transform:scale(1.2)}
+.blur{opacity:1;filter:blur(14px)}
+.rotate{opacity:1;transform:rotate(-3deg) scale(.93)}
+.stretch{opacity:1;transform:scaleY(.55)}
+.slide-x{opacity:1;transform:translateX(-70px)}
 </style>
 </head>
 
@@ -243,7 +248,7 @@ trackEl.addEventListener("load",()=>{
       line.textContent=cue.text;
       line.className="fade";
       line.style.opacity=1;
-    },260);
+    },240);
   };
 
   track.addEventListener("cuechange",refresh);
