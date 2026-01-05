@@ -25,11 +25,10 @@ html,body{
 #stage{
   position:fixed;
   inset:0;
-  perspective:1200px;
+  perspective:1400px;
   overflow:hidden;
 }
 
-/* camera */
 #world{
   position:absolute;
   inset:0;
@@ -46,6 +45,7 @@ html,body{
   display:flex;
   align-items:center;
   justify-content:center;
+  transition:opacity .4s ease;
 }
 
 /* =====================
@@ -60,13 +60,16 @@ html,body{
    SCENE 1 — SAI TENERE UN SEGRETO
    ===================== */
 #scene1{
-  transform:translateZ(0);
   background:
     linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.9)),
     url("https://i.ibb.co/nsyZJK7W/Sai-Tenere-Un-Segreto.png");
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
+}
+
+#scene1{
+  transform:translateZ(0);
 }
 
 #scene1 h1{
@@ -98,7 +101,7 @@ html,body{
   line-height:1.25;
   text-shadow:0 12px 44px rgba(0,0,0,.95);
   opacity:0;
-  transition:opacity .3s ease, transform .4s ease;
+  transition:opacity .3s ease;
 }
 
 /* =====================
@@ -143,7 +146,7 @@ html,body{
   display:flex;
   gap:24px;
   font-size:13px;
-  opacity:.8;
+  opacity:.85;
   z-index:20;
 }
 
@@ -168,6 +171,7 @@ html,body{
         <h1>Sai tenere un segreto?</h1>
         <div class="artist">DavideKra</div>
       </div>
+
       <div id="karaoke">
         <div id="line"></div>
       </div>
@@ -201,59 +205,93 @@ html,body{
 
 <script>
 /* =====================
-   SCROLL ALBUM (CAMERA)
+   CAMERA SCROLL (AVANTI / INDIETRO)
    ===================== */
+const scenes = [
+  { el: document.getElementById("scene1"), z: 0 },
+  { el: document.getElementById("scene2"), z: -1200 }
+];
+
 let cameraZ = 0;
-const world = document.getElementById("world");
-const SCENE_DEPTH = 1200;
+const MAX_Z = 1200;
+const SPEED = 0.9;
+
+function updateScenes(){
+  scenes.forEach(scene=>{
+    const relativeZ = scene.z + cameraZ;
+
+    const t = Math.max(0, Math.min(1, 1 - Math.abs(relativeZ) / 1200));
+    const scale = 0.7 + t * 0.3;
+    const opacity = t;
+
+    scene.el.style.transform =
+      `translateZ(${relativeZ}px) scale(${scale})`;
+    scene.el.style.opacity = opacity;
+  });
+}
 
 window.addEventListener("wheel",(e)=>{
   e.preventDefault();
-  cameraZ += e.deltaY * 0.8;
-  cameraZ = Math.max(-SCENE_DEPTH, Math.min(0, cameraZ));
-  world.style.transform = `translateZ(${cameraZ}px)`;
+  cameraZ += e.deltaY * SPEED;
+  cameraZ = Math.max(0, Math.min(MAX_Z, cameraZ));
+  updateScenes();
 },{passive:false});
+
+updateScenes();
 
 /* =====================
    AUDIO / PLAYER
    ===================== */
 const audio = document.getElementById("audio");
 const playBtn = document.getElementById("play");
-document.getElementById("back").onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
-document.getElementById("forward").onclick=()=>audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
+
+document.getElementById("back").onclick=()=>{
+  audio.currentTime = Math.max(0, audio.currentTime - 10);
+};
+document.getElementById("forward").onclick=()=>{
+  audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+};
 
 playBtn.onclick=()=>{
-  if(audio.paused){audio.play();playBtn.textContent="pause";}
-  else{audio.pause();playBtn.textContent="play";}
+  if(audio.paused){
+    audio.play();
+    playBtn.textContent="pause";
+  }else{
+    audio.pause();
+    playBtn.textContent="play";
+  }
 };
 
 /* =====================
    KARAOKE
    ===================== */
-const trackEl=document.getElementById("lyricsTrack");
-const line=document.getElementById("line");
-let lastCue=null;
+const trackEl = document.getElementById("lyricsTrack");
+const line = document.getElementById("line");
+let lastCue = null;
 
 trackEl.addEventListener("load",()=>{
-  const track=trackEl.track;
-  track.mode="hidden";
+  const track = trackEl.track;
+  track.mode = "hidden";
 
-  const refresh=()=>{
-    const a=track.activeCues;
-    if(!a||!a.length){line.style.opacity=0;return;}
-    const cue=a[0];
-    if(cue===lastCue)return;
-    lastCue=cue;
+  const refresh = ()=>{
+    const a = track.activeCues;
+    if(!a || !a.length){
+      line.style.opacity = 0;
+      return;
+    }
+    const cue = a[0];
+    if(cue === lastCue) return;
+    lastCue = cue;
 
-    line.style.opacity=0;
+    line.style.opacity = 0;
     setTimeout(()=>{
-      line.textContent=cue.text;
-      line.style.opacity=1;
+      line.textContent = cue.text;
+      line.style.opacity = 1;
     },200);
   };
 
-  track.addEventListener("cuechange",refresh);
-  audio.addEventListener("timeupdate",refresh);
+  track.addEventListener("cuechange", refresh);
+  audio.addEventListener("timeupdate", refresh);
 });
 </script>
 
