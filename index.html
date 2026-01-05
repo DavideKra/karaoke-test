@@ -25,7 +25,7 @@ body{
 }
 
 /* =====================
-   BACKGROUND (RESPIRA FORTE)
+   BACKGROUND (FERMO DI BASE)
    ===================== */
 #bg{
   position:fixed;
@@ -37,27 +37,19 @@ body{
   background-repeat:no-repeat;
   background-position:center;
   background-size:contain;
-
-  /* più veloce + più ampio */
-  animation:bgPulse 0.8s ease-in-out infinite;
+  transform:scale(1);
+  will-change:transform;
 }
 
-@keyframes bgPulse{
-  0%{
-    transform:scale(1);
-  }
-  25%{
-    transform:scale(1.08);
-  }
-  50%{
-    transform:scale(1.14);
-  }
-  75%{
-    transform:scale(1.08);
-  }
-  100%{
-    transform:scale(1);
-  }
+/* animazione ATTIVA SOLO QUANDO SUONA */
+#bg.playing{
+  animation:bgPump 1.2s linear infinite;
+}
+
+@keyframes bgPump{
+  0%   { transform:scale(1); }
+  50%  { transform:scale(1.18); }
+  100% { transform:scale(1); }
 }
 
 /* =====================
@@ -125,9 +117,9 @@ body{
     0 0 14px rgba(0,0,0,.7);
   opacity:0;
   transition:
-    transform .45s ease,
-    filter .45s ease,
-    opacity .35s ease;
+    transform .4s ease,
+    filter .4s ease,
+    opacity .3s ease;
 }
 
 /* =====================
@@ -204,15 +196,16 @@ body{
 </audio>
 
 <script>
-const audio=document.getElementById("audio");
-const trackEl=document.getElementById("lyricsTrack");
-const line=document.getElementById("line");
-const intro=document.getElementById("intro");
-const controls=document.getElementById("controls");
+const audio   = document.getElementById("audio");
+const bg      = document.getElementById("bg");
+const trackEl = document.getElementById("lyricsTrack");
+const line    = document.getElementById("line");
+const intro   = document.getElementById("intro");
+const controls= document.getElementById("controls");
 
-const playBtn=document.getElementById("play");
-const backBtn=document.getElementById("back");
-const forwBtn=document.getElementById("forward");
+const playBtn = document.getElementById("play");
+const backBtn = document.getElementById("back");
+const forwBtn = document.getElementById("forward");
 
 let lastCue=null;
 const transitions=["fade","slide-up","slide-down","zoom","blur","rotate","stretch","slide-x"];
@@ -224,18 +217,31 @@ document.getElementById("start").onclick=async()=>{
   intro.classList.add("hide");
   controls.style.display="flex";
   playBtn.textContent="pause";
+  bg.classList.add("playing");
 };
 
-/* PLAY */
+/* PLAY / PAUSE */
 playBtn.onclick=()=>{
-  if(audio.paused){audio.play();playBtn.textContent="pause";}
-  else{audio.pause();playBtn.textContent="play";}
+  if(audio.paused){
+    audio.play();
+    playBtn.textContent="pause";
+    bg.classList.add("playing");
+  }else{
+    audio.pause();
+    playBtn.textContent="play";
+    bg.classList.remove("playing");
+  }
 };
 
 /* SEEK */
 backBtn.onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-10);
 forwBtn.onclick=()=>audio.currentTime=Math.min(audio.duration,audio.currentTime+10);
 audio.addEventListener("seeked",()=>lastCue=null);
+
+/* STOP BACKGROUND WHEN ENDS */
+audio.addEventListener("ended",()=>{
+  bg.classList.remove("playing");
+});
 
 /* KARAOKE */
 trackEl.addEventListener("load",()=>{
@@ -260,7 +266,7 @@ trackEl.addEventListener("load",()=>{
       line.textContent=cue.text;
       line.className="fade";
       line.style.opacity=1;
-    },240);
+    },220);
   };
 
   track.addEventListener("cuechange",refresh);
