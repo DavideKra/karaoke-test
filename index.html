@@ -1160,13 +1160,12 @@ window.addEventListener("mousemove", (e)=>{
 });
 
 function drawCursor(){
-  // fade previous frame (soft)
-  cursorCtx.fillStyle = "rgba(0,0,0,0.12)";
-  cursorCtx.fillRect(0,0,ccw,cch);
-
   const now = performance.now();
 
-  // Trail line
+  // ✅ NON oscurare la pagina: pulisci davvero il canvas
+  cursorCtx.clearRect(0,0,ccw,cch);
+
+  // Trail
   cursorCtx.save();
   cursorCtx.globalCompositeOperation = "lighter";
   cursorCtx.lineCap = "round";
@@ -1175,12 +1174,13 @@ function drawCursor(){
   for(let i=1;i<trail.length;i++){
     const a = trail[i-1], b = trail[i];
     const age = (now - b.t);
-    const alpha = clamp(1 - age/520, 0, 1);
+    const alpha = clamp(1 - age/650, 0, 1);     // durata scia
     const w = (10 - i*(7/TRAIL_MAX)) * cdpr;
 
-    // alternate neon colors (violet/yellow)
     const isAlt = (i % 6) < 3;
-    const col = isAlt ? `rgba(170,60,255,${0.22*alpha})` : `rgba(255,230,60,${0.18*alpha})`;
+    const col = isAlt
+      ? `rgba(170,60,255,${0.28*alpha})`
+      : `rgba(255,230,60,${0.22*alpha})`;
 
     cursorCtx.strokeStyle = col;
     cursorCtx.lineWidth = Math.max(1, w);
@@ -1201,7 +1201,7 @@ function drawCursor(){
   cursorCtx.arc(mx*cdpr, my*cdpr, r, 0, Math.PI*2);
   cursorCtx.fill();
 
-  // inner glow
+  // Outer glow
   cursorCtx.shadowBlur = 40 * cdpr;
   cursorCtx.shadowColor = "rgba(255,230,60,0.55)";
   cursorCtx.fillStyle = "rgba(170,60,255,0.28)";
@@ -1212,10 +1212,11 @@ function drawCursor(){
   cursorCtx.restore();
 
   // prune old points
-  trail = trail.filter(p => (now - p.t) < 650);
+  trail = trail.filter(p => (now - p.t) < 800);
 
   requestAnimationFrame(drawCursor);
 }
+
 
 /* INIT */
 window.addEventListener("load", ()=>{
