@@ -3,45 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Davide*Kra — Album 3D (LIGHT + Cine + Tutorial Auto)</title>
+<title>Davide*Kra — Album 3D (LIGHT + Styles + Cine + Tutorial Auto)</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&family=Bodoni+Moda:wght@600;700&display=swap" rel="stylesheet" />
 
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
 
-/* Sempre e solo il pallino (mai freccia/hand) */
+/* sempre e solo pallino (mai freccia/hand) */
 body{cursor:none;}
 html, body, * { cursor:none !important; }
 *:hover, *:active, *:focus { cursor:none !important; }
 a, button, [role="button"], input, textarea, select { cursor:none !important; }
-
-/* Cinematic: nascondi UI, ma lascia karaoke+cover+fx */
-body.cinematic #minimap,
-body.cinematic #controls,
-body.cinematic #playerTitle,
-body.cinematic #tutorial{
-  display:none !important;
-}
-
-/* Bottone uscita cinematic */
-#cineExit{
-  position:fixed;
-  top:18px; left:18px;
-  z-index:90;
-  display:none;
-  background:rgba(0,0,0,0.62);
-  color:#fff;
-  border:1px solid rgba(255,255,255,0.16);
-  border-radius:14px;
-  padding:10px 14px;
-  font:700 12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  letter-spacing:.6px;
-  text-transform:uppercase;
-  backdrop-filter:blur(6px);
-  cursor:none !important;
-}
-#cineExit:hover{background:#fff;color:#000}
-body.cinematic #cineExit{display:block;}
 
 :root{ --hudTx: rgba(255,255,255,.9); }
 
@@ -59,26 +33,30 @@ body.cinematic #cineExit{display:block;}
   pointer-events:none;
 }
 
-/* FX layer: solo gradienti (safe) */
+/* FX layer (leggero) */
 #fx-layer{
   position:fixed; inset:0;
   z-index:18;
   pointer-events:none;
   opacity:.9;
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
+/* FX per stile (solo gradienti + filtri leggeri) */
 body[data-active-style="thriller"] #fx-layer{
   background:
     radial-gradient(circle at 50% 40%, rgba(140,40,40,0.18) 0%, transparent 55%),
     radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.86) 70%);
   animation: fxPulse 2.0s linear infinite;
+  box-shadow: inset 0 0 120px rgba(0,0,0,0.85);
+  filter: contrast(1.08) brightness(0.95);
 }
 body[data-active-style="amore"] #fx-layer{
   background:
     radial-gradient(circle at 30% 30%, rgba(255,120,170,0.16) 0%, transparent 55%),
     radial-gradient(circle at 70% 70%, rgba(255,80,140,0.12) 0%, rgba(0,0,0,0.80) 70%);
   animation: fxPulse 3.2s ease-in-out infinite;
+  filter: contrast(1.02) brightness(1.05);
 }
 body[data-active-style="sexy"] #fx-layer{
   background:
@@ -87,12 +65,14 @@ body[data-active-style="sexy"] #fx-layer{
     radial-gradient(circle at 55% 80%, rgba(255,60,200,0.12) 0%, transparent 65%),
     radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.86) 72%);
   animation: fxPulse 2.6s ease-in-out infinite;
+  filter: contrast(1.15) saturate(1.35) brightness(0.98);
 }
 body[data-active-style="normale"] #fx-layer{
   background:
     radial-gradient(circle at 50% 50%, rgba(200,200,255,0.06) 0%, transparent 70%),
     radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.82) 75%);
   animation:none;
+  filter:none;
 }
 @keyframes fxPulse{
   0%{opacity:.78}
@@ -137,7 +117,7 @@ body[data-active-style="normale"] #fx-layer{
 }
 .thump-effect{ animation: thumpAnim .15s ease-out forwards; }
 
-/* Meta */
+/* Meta (base) */
 .meta{
   text-align:center;
   pointer-events:none;
@@ -150,6 +130,9 @@ body[data-active-style="normale"] #fx-layer{
   font-size:clamp(40px,7vw,80px);
   line-height:1.05;
   text-shadow:0 10px 30px rgba(0,0,0,1);
+  font-family:"Roboto", system-ui, -apple-system, Segoe UI, sans-serif;
+  font-weight:900;
+  letter-spacing:-1px;
 }
 .meta .artist{
   margin-top:12px;
@@ -158,6 +141,7 @@ body[data-active-style="normale"] #fx-layer{
   letter-spacing:2px;
   text-transform:uppercase;
   text-shadow:0 10px 26px rgba(0,0,0,.9);
+  font-family:"Roboto", system-ui, -apple-system, Segoe UI, sans-serif;
 }
 .scene.is-playing .meta{
   opacity:0;
@@ -165,7 +149,41 @@ body[data-active-style="normale"] #fx-layer{
   filter:blur(3px);
 }
 
-/* ===== Tutorial (auto-collapse) ===== */
+/* Typography per stile (titoli cover) */
+.scene[data-style="thriller"] .meta .title{
+  font-family:"Rubik Dirt", cursive;
+  font-weight:400;
+  letter-spacing:.2px;
+  color:#ffd0d0;
+  text-shadow:0 12px 44px rgba(0,0,0,1), 0 0 18px rgba(255,80,80,.25);
+}
+.scene[data-style="amore"] .meta .title{
+  font-family:"Playfair Display", serif;
+  font-weight:700;
+  font-style:italic;
+  letter-spacing:.2px;
+  color:#ffe0f0;
+  text-shadow:0 12px 44px rgba(0,0,0,1), 0 0 18px rgba(255,160,200,.18);
+}
+.scene[data-style="sexy"] .meta .title{
+  font-family:"Bodoni Moda", serif;
+  font-weight:700;
+  letter-spacing:.55px;
+  font-style:italic;
+  color:#f7d2ff;
+  text-shadow:
+    0 12px 44px rgba(0,0,0,1),
+    0 0 20px rgba(170,60,255,0.35),
+    0 0 16px rgba(255,230,60,0.18);
+}
+.scene[data-style="normale"] .meta .title{
+  font-family:"Roboto", system-ui, -apple-system, Segoe UI, sans-serif;
+  font-weight:900;
+  letter-spacing:-1px;
+  color:#ffffff;
+}
+
+/* ===== Tutorial auto-collapse ===== */
 #tutorial{
   position:fixed; top:18px; left:18px; z-index:60;
   max-width:min(380px, 78vw);
@@ -205,16 +223,9 @@ body[data-active-style="normale"] #fx-layer{
 }
 #tutorialBody strong{color:#fff}
 
-#tutorial.collapsed .panel{
-  background:rgba(0,0,0,0.45);
-}
 #tutorial.collapsed #tutorialBody{
   display:none;
-  padding:0;
-  border-top:0;
 }
-#tutorial.collapsed #tutorialToggle .x{display:none;}
-
 #tutorial.open #tutorialToggle .x{display:inline;}
 
 /* Mini-map */
@@ -245,15 +256,61 @@ body[data-active-style="normale"] #fx-layer{
 }
 #line{
   max-width:1100px; text-align:center; line-height:1.2; opacity:0;
-  transition:opacity .15s ease, transform .25s ease;
   text-shadow:0 12px 44px rgba(0,0,0,1);
   font-size:clamp(30px,5vw,64px);
+
+  font-family:"Roboto", system-ui, -apple-system, Segoe UI, sans-serif;
+  font-weight:900;
+  letter-spacing:-1px;
+  color:#fff;
 }
+
+/* Karaoke typography per stile */
+body[data-active-style="thriller"] #line{
+  font-family:"Rubik Dirt", cursive;
+  font-weight:400;
+  letter-spacing:.25px;
+  color:#ff4a4a;
+  text-shadow: 0 14px 55px rgba(0,0,0,1), 0 0 18px rgba(255,60,60,0.25);
+}
+body[data-active-style="amore"] #line{
+  font-family:"Playfair Display", serif;
+  font-weight:700;
+  font-style:italic;
+  letter-spacing:.15px;
+  color:#ffe6f3;
+  text-shadow: 0 14px 55px rgba(0,0,0,1), 0 0 18px rgba(255,160,200,0.18);
+}
+body[data-active-style="sexy"] #line{
+  font-family:"Bodoni Moda", serif;
+  font-weight:700;
+  font-style:italic;
+  letter-spacing:.55px;
+  color:#f3c6ff;
+  text-shadow:
+    0 14px 60px rgba(0,0,0,1),
+    0 0 22px rgba(170,60,255,0.40),
+    0 0 14px rgba(255,230,60,0.18);
+}
+body[data-active-style="normale"] #line{
+  font-family:"Roboto", system-ui, -apple-system, Segoe UI, sans-serif;
+  font-weight:900;
+  letter-spacing:-1px;
+  color:#fff;
+}
+
+/* Micro-transizioni leggere karaoke */
+#line.k-enter{ transform:translateY(14px) scale(0.995); filter:blur(6px); opacity:0; }
+#line.k-show { transform:none; filter:none; opacity:1; transition:opacity .14s ease, transform .20s ease, filter .20s ease; }
+body[data-active-style="thriller"] #line.k-enter{ transform:translateY(10px); filter:blur(10px); }
+body[data-active-style="amore"]    #line.k-enter{ transform:translateY(18px); filter:blur(7px); }
+body[data-active-style="sexy"]     #line.k-enter{ transform:translateY(12px) scale(1.01); filter:blur(6px); }
 
 /* Player title + controls */
 #playerTitle{
   position:fixed; bottom:88px; left:40px; z-index:32;
-  font:700 30px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#fff;
+  font:700 30px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color:#fff;
   opacity:0; transform:translateY(20px); transition:all .4s ease;
   text-shadow:0 10px 26px rgba(0,0,0,1);
 }
@@ -299,6 +356,32 @@ body[data-active-style="normale"] #fx-layer{
   text-overflow:ellipsis;
 }
 #controls button[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(-16px); }
+
+/* Cinematic: nascondi UI, ma lascia cover+karaoke+fx */
+body.cinematic #minimap,
+body.cinematic #controls,
+body.cinematic #playerTitle,
+body.cinematic #tutorial{
+  display:none !important;
+}
+
+/* Bottone uscita cinematic */
+#cineExit{
+  position:fixed; top:18px; left:18px;
+  z-index:90;
+  display:none;
+  background:rgba(0,0,0,0.62);
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.16);
+  border-radius:14px;
+  padding:10px 14px;
+  font:800 12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  backdrop-filter:blur(6px);
+}
+#cineExit:hover{background:#fff;color:#000}
+body.cinematic #cineExit{display:block;}
 
 @media (max-width:600px){
   #tutorial{max-width:82vw}
@@ -358,7 +441,7 @@ body[data-active-style="normale"] #fx-layer{
 
 <script>
 /* =========================
-   TRACKS (uguali ai tuoi)
+   TRACKS
    ========================= */
 const tracks = [
   { artist:"Davide*Kra", title:"In throw", slug:"in-throw", bpm:90, style:"normale",
@@ -426,7 +509,7 @@ tutorialToggle.addEventListener("click", ()=>{
   setTutorial(!isOpen);
 });
 
-// Mostra 5s aperto, poi collassa
+/* mostra 5s aperto, poi collassa */
 window.addEventListener("load", ()=>{
   setTutorial(true);
   setTimeout(()=>{
@@ -452,8 +535,7 @@ window.addEventListener("keydown", (e)=>{
 });
 
 /* =========================
-   Preload leggero
-   cover + vtt + audio metadata prossima
+   Preload leggero: cover + vtt + audio metadata (prossima)
    ========================= */
 const preloadAudio = new Audio();
 preloadAudio.preload = "metadata";
@@ -482,7 +564,7 @@ function preloadNext(index){
 }
 
 /* =========================
-   Particles (LIGHT @30fps)
+   Particles LIGHT @30fps
    ========================= */
 const bgCanvas = document.getElementById('bg-canvas');
 const bgCtx = bgCanvas.getContext('2d', { alpha:true });
@@ -516,11 +598,13 @@ class Particle{
       this.vy = (3.5 + Math.random()*4.5) * dpr;
       this.len = (12 + Math.random()*18) * dpr;
       this.a = 0.12 + Math.random()*0.22;
+
     } else if(style === "amore"){
       this.vx = (Math.random()-0.5) * 0.8 * dpr;
       this.vy = (1.0 + Math.random()*1.8) * dpr;
       this.r  = (3 + Math.random()*6) * dpr;
       this.a  = 0.14 + Math.random()*0.20;
+
     } else if(style === "sexy"){
       this.vx = (Math.random()-0.5) * 0.6 * dpr;
       this.vy = (-0.8 - Math.random()*1.4) * dpr;
@@ -528,6 +612,7 @@ class Particle{
       this.a  = 0.10 + Math.random()*0.18;
       const tones = ["170,60,255","255,230,60","255,60,200"];
       this.c = tones[(Math.random()*tones.length)|0];
+
     } else {
       this.vx = (Math.random()-0.5) * 0.7 * dpr;
       this.vy = (Math.random()-0.5) * 0.7 * dpr;
@@ -541,16 +626,19 @@ class Particle{
     if(this.style === "thriller"){
       this.x += this.vx; this.y += this.vy;
       if(this.y > ch + 40*dpr){ this.y = -40*dpr; this.x = Math.random()*cw; }
+
     } else if(this.style === "amore"){
       this.y += this.vy;
       this.x += this.vx + Math.sin(this.life*0.02) * (0.6*dpr);
       if(this.y > ch + 30*dpr){ this.y = -30*dpr; this.x = Math.random()*cw; }
+
     } else if(this.style === "sexy"){
       this.y += this.vy;
       this.x += this.vx + Math.sin(this.life*0.02) * (0.6*dpr);
       if(this.y < -30*dpr){ this.y = ch + 30*dpr; this.x = Math.random()*cw; }
       if(this.x < -40*dpr) this.x = cw+40*dpr;
       if(this.x > cw+40*dpr) this.x = -40*dpr;
+
     } else {
       this.x += this.vx; this.y += this.vy;
       if(this.x < -40*dpr) this.x = cw+40*dpr;
@@ -592,8 +680,16 @@ function targetCountForStyle(s){
 }
 
 let lastStyleApplied = null;
-function updateCanvasEffect(newStyle){
-  const s = newStyle || "normale";
+function setActiveStyle(styleKey){
+  const s = styleKey || "normale";
+  if(lastStyleApplied === s) return;
+  lastStyleApplied = s;
+  document.body.dataset.activeStyle = s;
+  updateCanvasEffect(s);
+}
+
+function updateCanvasEffect(style){
+  const s = style || "normale";
   const target = targetCountForStyle(s);
   while(particles.length < target) particles.push(new Particle(s));
   while(particles.length > target) particles.pop();
@@ -613,7 +709,7 @@ function loopBgCanvas(t){
 }
 
 /* =========================
-   Scenes
+   Scenes & World
    ========================= */
 const world = document.getElementById("world");
 const SCENE_DEPTH = 2200;
@@ -660,13 +756,6 @@ const playBtn=document.getElementById("play");
 const prevBtn=document.getElementById("prevTrack");
 const nextBtn=document.getElementById("nextTrack");
 
-function setActiveStyle(styleKey){
-  const s = styleKey || "normale";
-  if(lastStyleApplied === s) return;
-  lastStyleApplied = s;
-  document.body.dataset.activeStyle = s;
-  updateCanvasEffect(s);
-}
 function updateHUD(){
   const t=scenes[activeIndex].track;
   ptArtist.textContent = t.artist;
@@ -723,7 +812,7 @@ function jumpToIndex(i, autoplay){
 }
 
 /* =========================
-   Audio (crossfade light + karaoke)
+   Audio (crossfade + karaoke)
    ========================= */
 const audioA=document.getElementById("audioA");
 const audioB=document.getElementById("audioB");
@@ -754,6 +843,7 @@ function clearKaraoke(){
   vttSession++;
   line.style.opacity=0;
   line.textContent="";
+  line.classList.remove("k-enter","k-show");
   if(currentTrackEl){
     try{ currentTrackEl.remove(); }catch(e){}
     currentTrackEl=null;
@@ -775,6 +865,7 @@ function bindKaraokeTo(playerEl, trackObj){
 
   tr.addEventListener("load", ()=>{
     if(mySession!==vttSession) return;
+
     const tt=tr.track;
     tt.mode="hidden";
     let lastCue=null;
@@ -783,18 +874,26 @@ function bindKaraokeTo(playerEl, trackObj){
       if(mySession!==vttSession) return;
       if(playingIndex===null || activeIndex!==playingIndex) { line.style.opacity=0; return; }
       if(getCurrentAudio().paused) { line.style.opacity=0; return; }
+
       const a=tt.activeCues;
       if(!a || !a.length){ line.style.opacity=0; return; }
+
       const cue=a[0];
       if(cue===lastCue) return;
       lastCue=cue;
 
+      line.classList.remove("k-show");
+      line.classList.add("k-enter");
       line.style.opacity = 0;
+
       setTimeout(()=>{
         if(mySession!==vttSession) return;
         if(playingIndex===null || activeIndex!==playingIndex) { line.style.opacity=0; return; }
         if(getCurrentAudio().paused) { line.style.opacity=0; return; }
+
         line.textContent = cue.text;
+        line.classList.remove("k-enter");
+        line.classList.add("k-show");
         line.style.opacity = 1;
       }, 90);
     };
@@ -893,7 +992,7 @@ async function playOrToggle(){
   await playIndex(activeIndex, "toggle");
 }
 
-/* Autoplay next when track ends */
+/* Autoplay next quando finisce */
 function handleEnded(endedEl){
   if(playingIndex===null) return;
   if(endedEl !== getCurrentAudio()) return;
@@ -1025,6 +1124,7 @@ window.addEventListener("mousemove", (e)=>{
   if(trail.length > TRAIL_MAX) trail.shift();
 });
 
+/* IMPORTANT: non disegnare rettangoli neri con alpha (evita flash su GPU), pulisco e ridisegno */
 let lastCurTime=0;
 function drawCursor(t){
   if(!lastCurTime) lastCurTime = t;
@@ -1054,6 +1154,7 @@ function drawCursor(t){
 
   const pulse = 0.6 + Math.sin(now*0.012)*0.4;
   const r = (5 + pulse*2) * cdpr;
+
   cursorCtx.fillStyle = "rgba(255,255,255,0.92)";
   cursorCtx.beginPath();
   cursorCtx.arc(mx*cdpr, my*cdpr, r, 0, Math.PI*2);
@@ -1068,6 +1169,7 @@ function drawCursor(t){
 
 /* INIT */
 window.addEventListener("load", ()=>{
+  // hash jump
   const hash = location.hash.slice(1);
   let startIndex = 0;
   if(hash){
@@ -1083,9 +1185,8 @@ window.addEventListener("load", ()=>{
   updateCanvasEffect(tracks[activeIndex].style);
 
   if(particles.length === 0){
-    for(let i=0;i<targetCountForStyle(tracks[activeIndex].style);i++){
-      particles.push(new Particle(tracks[activeIndex].style));
-    }
+    const n = targetCountForStyle(tracks[activeIndex].style);
+    for(let i=0;i<n;i++) particles.push(new Particle(tracks[activeIndex].style));
   }
 
   preloadNext(activeIndex);
