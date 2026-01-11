@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Davide*Kra — Album 3D V10 (Sexy style + Autoplay Next)</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&family=Bodoni+Moda:wght@600;700&display=swap" rel="stylesheet" />
+
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
+:root{ --hudTx: rgba(255,255,255,.9); }
+
+/* ===== CANVAS BG (Motore Fisico) =====
+   Portato SOPRA la copertina: z-index 15 (stage è 10)
+*/
+#bg-canvas{
+  position:fixed; inset:0;
+  z-index:15;
+  pointer-events:none;
+}
+
+/* ===== FX LAYER (Colori e Atmosfera) =====
+   Già sopra copertina (z-index 20)
+*/
+#fx-layer{
+  position:fixed; inset:0;
+  z-index:20;
+  pointer-events:none;
+  transition:all .5s ease;
+  mix-blend-mode:overlay;
+}
+
+/* THRILLER */
+body[data-active-style="thriller"] #fx-layer{
+  background: radial-gradient(circle at center, transparent 30%, #000 120%);
+  box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+  filter: contrast(1.2) brightness(0.9) sepia(0.2);
+}
+
+/* AMORE (romantico) */
+body[data-active-style="amore"] #fx-layer{
+  background: radial-gradient(circle, rgba(255,100,150,0.2) 0%, rgba(50,0,20,0.6) 90%);
+  filter: blur(0.5px) brightness(1.2) contrast(1.1);
+  animation: lovePulse 4s infinite;
+}
+@keyframes lovePulse{0%{opacity:.8}50%{opacity:1}100%{opacity:.8}}
+
+/* SEXY (viola / carnale, più “spinto” ma non esplicito) */
+body[data-active-style="sexy"] #fx-layer{
+  background:
+    radial-gradient(circle at 30% 35%, rgba(170, 70, 255, 0.22) 0%, rgba(20, 0, 20, 0.88) 72%),
+    radial-gradient(circle at 70% 75%, rgba(255, 0, 140, 0.16) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.8));
+  background-blend-mode: screen, screen, normal;
+  filter: contrast(1.15) saturate(1.55) brightness(0.92);
+  animation: sexyPulse 5.2s ease-in-out infinite;
+  opacity: .95;
+}
+@keyframes sexyPulse{
+  0%   { transform:scale(1);    filter:contrast(1.10) saturate(1.45) brightness(0.92); }
+  50%  { transform:scale(1.01); filter:contrast(1.22) saturate(1.70) brightness(0.96); }
+  100% { transform:scale(1);    filter:contrast(1.10) saturate(1.45) brightness(0.92); }
+}
+
+/* NORMALE */
+body[data-active-style="normale"] #fx-layer{
+  background: radial-gradient(circle, rgba(200,200,255,0.05) 0%, transparent 80%);
+  opacity:.5;
+}
+
+/* ===== STAGE ===== */
+#stage{
+  position:fixed; inset:0;
+  perspective:1800px;
+  overflow:hidden;
+  z-index:10;
+}
+#world{
+  position:absolute; inset:0;
+  transform-style:preserve-3d;
+}
+
+/* ===== SCENE ===== */
+.scene{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  transform-style:preserve-3d;
+  background-repeat:no-repeat;
+  background-position:center center;
+  background-size:contain;
+  will-change:transform,opacity;
+  opacity:0;
+  cursor:pointer; /* click to play */
+}
+.scene::before{
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.8));
+  pointer-events:none;
+  z-index:1;
+}
+.scene::after{
+  content:"";
+  position:absolute;
+  top:100%; left:0; right:0;
+  height:100%;
+  background-image:inherit;
+  background-size:inherit;
+  background-position:inherit;
+  background-repeat:no-repeat;
+  transform: scaleY(-1) translateY(-2px);
+  transform-origin:top;
+  opacity:.35;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+.scene > *{position:relative; z-index:2}
+
+/* THUMP EFFECT */
+@keyframes thumpAnim{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.02);filter:brightness(1.1)}
+  100%{transform:scale(1)}
+}
+.thump-effect{ animation: thumpAnim .15s ease-out forwards; }
+
+.meta{
+  text-align:center;
+  pointer-events:none;
+  max-width:86vw;
+  transition:opacity .35s ease, transform .35s ease, filter .35s ease;
+  margin-bottom:40px;
+}
+.meta .title{
+  margin:0;
+  font-size:clamp(40px,7vw,80px);
+  line-height:1.05;
+  text-shadow:0 12px 44px rgba(0,0,0,1);
+}
+.meta .artist{
+  margin-top:12px;
+  font-size:1.2rem;
+  opacity:.8;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  text-shadow:0 10px 36px rgba(0,0,0,.9);
+}
+.scene.is-playing .meta{
+  opacity:0;
+  transform:translateY(-10px);
+  filter:blur(4px);
+}
+
+/* Fonts per scene */
+.scene[data-style="thriller"] .meta .title{ font-family:"Rubik Dirt", cursive; letter-spacing:.25px; color:#ffcece; }
+.scene[data-style="normale"]  .meta .title{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing:-1px; }
+.scene[data-style="amore"]    .meta .title{ font-family:"Playfair Display", serif; font-weight:700; font-style:italic; color:#ffe0f0; }
+.scene[data-style="sexy"]     .meta .title{ font-family:"Bodoni Moda", serif; font-weight:700; letter-spacing:.4px; color:#f7d2ff; }
+
+/* ===== TUTORIAL ===== */
+#tutorial{
+  position:fixed; bottom:30px; right:30px; z-index:40;
+  font:12px/1.5 "Roboto", sans-serif;
+  color:rgba(255,255,255,0.6);
+  text-align:right;
+  pointer-events:none;
+  background:rgba(0,0,0,0.6);
+  padding:10px 15px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.1);
+  backdrop-filter:blur(4px);
+}
+#tutorial strong{color:#fff}
+
+/* ===== Mini-map ===== */
+#minimap{
+  position:fixed; right:20px; top:50%; transform:translateY(-50%);
+  z-index:40; display:flex; flex-direction:column; gap:16px; align-items:flex-end;
+}
+.mm-item{display:flex;align-items:center;justify-content:flex-end;cursor:pointer}
+.mm-dot{
+  width:8px;height:8px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);
+  transition:all .3s ease;margin-left:12px;position:relative;
+}
+.mm-item:hover .mm-dot{background:#fff;transform:scale(1.2)}
+.mm-item.active .mm-dot{background:#fff;border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,0.5);transform:scale(1.3)}
+.mm-item.playing .mm-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid #fff;opacity:.6}
+.mm-label{
+  font:11px "Roboto", sans-serif; text-transform:uppercase; letter-spacing:1px; color:#fff;
+  opacity:.3; transition:opacity .3s; text-shadow:0 2px 4px rgba(0,0,0,0.8);
+}
+.mm-item:hover .mm-label, .mm-item.active .mm-label{opacity:1;font-weight:700}
+
+/* ===== Karaoke ===== */
+#karaoke{
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  pointer-events:none; z-index:25; padding:40px;
+}
+#line{
+  max-width:1100px; text-align:center; line-height:1.2; opacity:0;
+  transition:opacity .18s ease, transform .32s ease, filter .32s ease;
+  text-shadow:0 12px 44px rgba(0,0,0,1);
+  font-size:clamp(30px,5vw,64px);
+}
+body[data-active-style="thriller"] #line{ font-family:"Rubik Dirt", cursive; color:#ff4444; }
+body[data-active-style="normale"]  #line{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing:-1px;}
+body[data-active-style="amore"]    #line{ font-family:"Playfair Display", serif; font-weight:700; font-style:italic; color:#ffe0f0; }
+body[data-active-style="sexy"]     #line{ font-family:"Bodoni Moda", serif; font-weight:700; letter-spacing:.4px; color:#f0c1ff; }
+
+/* Transitions */
+.t-fade-in{transform:none;filter:none}
+.t-pop{transform:scale(1.08);filter:none}
+.t-slide-up{transform:translateY(40px);filter:none}
+.t-slide-down{transform:translateY(-40px);filter:none}
+.t-slide-left{transform:translateX(60px);filter:none}
+.t-slide-right{transform:translateX(-60px);filter:none}
+.t-rotate{transform:rotate(-3deg) scale(.98);filter:none}
+.t-blur{transform:none;filter:blur(14px)}
+.t-stretch{transform:scaleY(.72);filter:none}
+.t-snap{transform:scale(.92);filter:contrast(1.2)}
+.t-jitter{transform:translateX(-6px) rotate(.8deg);filter:none}
+
+/* ===== Player & Title ===== */
+#playerTitle{
+  position:fixed; bottom:80px; left:40px; z-index:32;
+  font:700 32px/1 "Roboto", sans-serif; color:#fff;
+  opacity:0; transform:translateY(20px); transition:all .5s ease;
+  text-shadow:0 10px 30px rgba(0,0,0,1); letter-spacing:-0.5px;
+}
+#playerTitle.visible{opacity:1;transform:translateY(0)}
+#playerTitle span{
+  display:block; font-size:14px; font-weight:400; opacity:.6;
+  margin-bottom:5px; text-transform:uppercase; letter-spacing:2px;
+}
+
+#controls{
+  position:fixed; bottom:40px; left:40px; display:flex; gap:24px;
+  font:13px/1.2 "Roboto", sans-serif; opacity:.86; z-index:31; user-select:none;
+}
+#controls button{
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+  color:#fff; cursor:pointer; padding:8px 16px; border-radius:20px;
+  transition:all .2s; font-weight:600; text-transform:uppercase; font-size:11px; letter-spacing:1px;
+}
+#controls button:hover{background:#fff;color:#000;text-decoration:none}
+
+@keyframes bgPump{
+  0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
+  50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
+  100% { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
+}
+.scene.breathing{ animation:bgPump var(--breatheDur, 1.2s) linear infinite; }
+
+@media (max-width:600px){
+  #tutorial{display:none}
+  #playerTitle{font-size:24px; bottom:80px; left:20px}
+  #controls{left:20px}
+}
+</style>
+</head>
+
+<body data-active-style="normale">
+
+<canvas id="bg-canvas"></canvas>
+<div id="fx-layer"></div>
+
+<div id="tutorial">
+  Ruota per scorrere gli album.<br>
+  Clicca i titoli per saltare.<br>
+  Clicca la <strong>copertina</strong> per Play/Pause.<br>
+  <strong>Shift+Scroll</strong> per scrub traccia.
+</div>
+
+<div id="minimap" aria-label="Album map"></div>
+
+<div id="stage"><div id="world"></div></div>
+<div id="karaoke"><div id="line"></div></div>
+
+<audio id="audioA" preload="metadata" crossorigin="anonymous"></audio>
+<audio id="audioB" preload="metadata" crossorigin="anonymous"></audio>
+
+<div id="playerTitle">
+  <span id="pt-artist">Davide*Kra</span>
+  <div id="pt-song">Track Name</div>
+</div>
+
+<div id="controls">
+  <button id="back">−10s</button>
+  <button id="play">PLAY</button>
+  <button id="forward">+10s</button>
+</div>
+
+<script>
+/* =========================
+   TRACKS (Covers + BPM + Styles)
+   ========================= */
+const tracks = [
+  { artist:"Davide*Kra", title:"In throw", slug:"in-throw", bpm:90, style:"normale",
+    cover:"https://i.ibb.co/4Z8mxCnm/In-Throw.png", audio:"DavideKra - 01 - In Throw.mp3", vtt:"DavideKra - 01 - In Throw.vtt" },
+
+  { artist:"Davide*Kra", title:"Sai Tenere Un Segreto?", slug:"segreto", bpm:126, style:"thriller",
+    cover:"https://i.ibb.co/KcmRRWd8/Sai-Tenere-Un-Segreto.png", audio:"DavideKra - 02 - Sai Tenere Un Segreto.mp3", vtt:"DavideKra - 02 - Sai Tenere Un Segreto.vtt" },
+
+  { artist:"Davide*Kra", title:"2 Cose Insieme", slug:"2-cose", bpm:91, style:"amore",
+    cover:"https://i.ibb.co/6JsXjd2M/2-cose-insieme.png", audio:"DavideKra - 03 - 2 Cose Insieme.mp3", vtt:"DavideKra - 03 - 2 Cose Insieme.vtt" },
+
+  { artist:"Davide*Kra", title:"Interlude 01", slug:"interlude-01", bpm:91, style:"normale",
+    cover:"https://i.ibb.co/8gL4yRyP/Interlude-01.png", audio:"DavideKra - 04 - Interlude.mp3", vtt:"DavideKra - 04 - Interlude.vtt" },
+
+  { artist:"Davide*Kra", title:"Provincia Di Niente", slug:"provincia-niente", bpm:90, style:"normale",
+    cover:"https://i.ibb.co/5x4tVsQN/Provincia-Di-Niente.png", audio:"DavideKra - 05 - Provincia Di Niente.mp3", vtt:"DavideKra - 05 - Provincia Di Niente.vtt" },
+
+  { artist:"Davide*Kra", title:"Killer Verse 2025", slug:"killer-verse-2025", bpm:91, style:"normale",
+    cover:"https://i.ibb.co/KpPmSjMd/Killer-Verse-2025.png", audio:"DavideKra - 06 - Killer Verse 2025.mp3", vtt:"DavideKra - 06 - Killer Verse 2025.vtt" },
+
+  { artist:"Davide*Kra", title:"La 25ª Ora", slug:"la-25a-ora", bpm:150, style:"amore",
+    cover:"https://i.ibb.co/P7fcR7w/La-25-Ora.png", audio:"DavideKra - 07 - La 25ª Ora.mp3", vtt:"DavideKra - 07 - La 25ª Ora.vtt" },
+
+  { artist:"Davide*Kra", title:"Interlude 02", slug:"interlude-02", bpm:87, style:"normale",
+    cover:"https://i.ibb.co/Sk9jx5X/Interlude-02.png", audio:"DavideKra - 08 - Interlude 02.mp3", vtt:"DavideKra - 08 - Interlude 02.vtt" },
+
+  { artist:"Davide*Kra", title:"Killer Verse 2026", slug:"killer-verse-2026", bpm:93, style:"normale",
+    cover:"https://i.ibb.co/B22SCJkz/Killer-Verse-2026.png", audio:"DavideKra - 09 - Killer Verse 2026.mp3", vtt:"DavideKra - 09 - Killer Verse 2026.vtt" },
+
+  { artist:"Davide*Kra", title:"Conta", slug:"conta", bpm:124, style:"normale",
+    cover:"https://i.ibb.co/mVLRsKNr/Conta.png", audio:"DavideKra - 10 - Conta.mp3", vtt:"DavideKra - 10 - Conta.vtt" },
+
+  { artist:"Davide*Kra", title:"IA-Pocalypse", slug:"ia-pocalypse", bpm:90, style:"normale",
+    cover:"https://i.ibb.co/PZbC5KbD/IA-pocalypse.png", audio:"DavideKra - 11 - IA-Pocalypse.mp3", vtt:"DavideKra - 11 - IA-Pocalypse.vtt" },
+
+  { artist:"Davide*Kra", title:"Interlude 03", slug:"interlude-03", bpm:89, style:"normale",
+    cover:"https://i.ibb.co/kgZ4QV1X/Interlude-03.png", audio:"DavideKra - 12 - Interlude 03.mp3", vtt:"DavideKra - 12 - Interlude 03.vtt" },
+
+  { artist:"Davide*Kra", title:"La Marihuana Es Su Diabla", slug:"la-marihuana-es-su-diabla", bpm:55, style:"normale",
+    cover:"https://i.ibb.co/Y7y2rcRh/La-Marihuana-Es-Su-Diabla.png", audio:"DavideKra - 13 - La Marihuana Es Su Diabla.mp3", vtt:"DavideKra - 13 - La Marihuana Es Su Diabla.vtt" },
+
+  { artist:"Davide*Kra", title:"Figlio Degli Anni '80", slug:"figlio-degli-anni-80", bpm:88, style:"normale",
+    cover:"https://i.ibb.co/My4Qk7B5/Figlio-Degli-Anni-80.png", audio:"DavideKra - 14 - Figlio degli anni '80.mp3", vtt:"DavideKra - 14 - Figlio degli anni '80.vtt" },
+
+  { artist:"Davide*Kra", title:"Fammi Male", slug:"fammi-male", bpm:87, style:"sexy",
+    cover:"https://i.ibb.co/gLHkXXvm/Fammi-Male.jpg", audio:"DavideKra - 15 - Fammi Male.mp3", vtt:"DavideKra - 15 - Fammi Male.vtt" },
+
+  { artist:"Davide*Kra", title:"Lettere Di Sangue", slug:"lettere-di-sangue", bpm:91, style:"thriller",
+    cover:"https://i.ibb.co/GfRv5W0K/Lettere-Di-Sangue.png", audio:"DavideKra - 16 - Lettere Di Sangue.mp3", vtt:"DavideKra - 16 - Lettere Di Sangue.vtt" },
+
+  { artist:"Davide*Kra", title:"Mio Dio", slug:"mio-dio", bpm:87, style:"sexy",
+    cover:"https://i.ibb.co/kgnLN3L4/Mio-Dio.jpg", audio:"DavideKra - 17 - Mio Dio.mp3", vtt:"DavideKra - 17 - Mio Dio.vtt" },
+
+  { artist:"Davide*Kra", title:"Sempre Meglio Di Niente", slug:"sempre-meglio-di-niente", bpm:121, style:"amore",
+    cover:"https://i.ibb.co/d0fvdSFC/Sempre-Meglio-Di-Niente.png", audio:"DavideKra - 18 - Sempre Meglio Di Niente.mp3", vtt:"DavideKra - 18 - Sempre Meglio Di Niente.vtt" },
+
+  { artist:"Davide*Kra", title:"Perdiamoci di vista", slug:"perdiamoci-di-vista", bpm:76, style:"normale",
+    cover:"https://i.ibb.co/d4v5qQGL/Perdiamoci-Di-Vista.jpg", audio:"DavideKra - 19 - Perdiamoci di vista.mp3", vtt:"DavideKra - 19 - Perdiamoci Di Vista.vtt" },
+
+  { artist:"Davide*Kra", title:"Ping Pong", slug:"ping-pong", bpm:120, style:"normale",
+    cover:"https://i.ibb.co/FL9YQh6c/Ping-Pong.png", audio:"DavideKra - 20 - Ping Pong.mp3", vtt:"DavideKra - 20 - Ping Pong.vtt" },
+
+  { artist:"Davide*Kra", title:"Nera", slug:"nera", bpm:90, style:"thriller",
+    cover:"https://i.ibb.co/G4bJyYzZ/Nera.png", audio:"DavideKra - 21 - Nera.mp3", vtt:"DavideKra - 21 - Nera.vtt" },
+
+  // Se nel repo il file è "Chaplin" (non "Champlin"), cambia qui sotto entrambe le stringhe.
+  { artist:"Davide*Kra", title:"Film Di Chaplin", slug:"film-di-chaplin", bpm:120, style:"amore",
+    cover:"https://i.ibb.co/S4K7Y8xH/Film-Di-Chaplin.png", audio:"DavideKra - 22 - Film Di Champlin.mp3", vtt:"DavideKra - 22 - Film Di Champlin.vtt" }
+];
+
+const STYLE = {
+  thriller:{ transitions:["t-blur","t-rotate","t-jitter","t-snap","t-slide-up","t-slide-down","t-pop","t-stretch","t-fade-in"], breatheAmp:1.10 },
+  normale: { transitions:["t-fade-in","t-slide-up","t-slide-down","t-pop","t-slide-left","t-slide-right","t-snap"], breatheAmp:1.00 },
+  amore:   { transitions:["t-fade-in","t-pop","t-slide-up","t-slide-right","t-slide-left","t-snap","t-stretch"], breatheAmp:0.95 },
+  sexy:    { transitions:["t-fade-in","t-pop","t-slide-up","t-slide-down","t-slide-left","t-slide-right","t-snap","t-stretch"], breatheAmp:0.98 }
+};
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function bpmToBreath(bpm, styleKey){
+  const s = STYLE[styleKey] || STYLE.normale;
+  let dur = 120 / Math.max(40, bpm);
+  dur = clamp(dur, 0.70, 2.1);
+  let amp = 1.06 + (bpm - 70) * 0.0015;
+  amp = clamp(amp, 1.06, 1.22) * s.breatheAmp;
+  amp = clamp(amp, 1.06, 1.30);
+  return { dur, amp };
+}
+function pickTransition(styleKey){
+  const set=(STYLE[styleKey]||STYLE.normale).transitions;
+  return set[(Math.random()*set.length)|0];
+}
+function encPath(p){ return encodeURI(p); } // spazi, 25ª, apostrofi, ecc.
+
+/* =========================
+   CANVAS PARTICLES SYSTEM
+   ========================= */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d', { alpha:true });
+
+let particles = [];
+let cw=0, ch=0, dpr=1;
+
+function resizeCanvas(){
+  dpr = window.devicePixelRatio || 1;
+  cw = canvas.width  = Math.floor(window.innerWidth  * dpr);
+  ch = canvas.height = Math.floor(window.innerHeight * dpr);
+  canvas.style.width  = window.innerWidth + "px";
+  canvas.style.height = window.innerHeight + "px";
+  ctx.setTransform(1,0,0,1,0,0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle{
+  constructor(style){ this.reset(style); }
+  reset(style){
+    this.style = style;
+    this.x = Math.random() * cw;
+    this.y = Math.random() * ch;
+    this.life = Math.random() * 100;
+
+    if(style === 'thriller'){
+      this.vx = (-1.5 + Math.random()) * dpr;
+      this.vy = (18 + Math.random()*12) * dpr;
+      this.length = (20 + Math.random()*30) * dpr;
+      this.y = Math.random() * -ch;
+      this.alpha = 0.2 + Math.random()*0.4;
+
+    } else if(style === 'amore'){
+      this.isPetal = Math.random() > 0.3;
+      if(this.isPetal){
+        this.vx = (Math.random()-0.5) * 2 * dpr;
+        this.vy = (1 + Math.random()*2) * dpr;
+        this.size = (6 + Math.random()*8) * dpr;
+        this.angle = Math.random() * Math.PI * 2;
+        this.spin  = (Math.random()-0.5) * 0.05;
+        this.y = Math.random() * -ch;
+        const tones = ["220,20,60","255,105,180","255,192,203"];
+        this.color = tones[(Math.random()*tones.length)|0];
+        this.alpha = 0.6 + Math.random()*0.4;
+      } else {
+        this.vx = (Math.random()-0.5) * 0.8 * dpr;
+        this.vy = (Math.random()-0.5) * 0.8 * dpr;
+        this.size = (2 + Math.random()*3) * dpr;
+        this.alpha = 0;
+        this.pulseSpeed = 0.02 + Math.random()*0.03;
+      }
+
+    } else if(style === 'sexy'){
+      // braci/embers violetti + glow morbido
+      this.vx = (Math.random()-0.5) * 0.9 * dpr;
+      this.vy = (-0.8 - Math.random()*1.6) * dpr;
+      this.size = (3 + Math.random()*10) * dpr;
+      this.alpha = 0.22 + Math.random()*0.55;
+      const tones = ["180,90,255","255,60,170","210,60,255"];
+      this.color = tones[(Math.random()*tones.length)|0];
+      this.y = ch + Math.random()*ch*0.2;
+      this.x = Math.random()*cw;
+      this.wobble = 0.8 + Math.random()*1.2;
+      this.phase = Math.random()*Math.PI*2;
+
+    } else {
+      this.vx = (Math.random()-0.5) * 0.6 * dpr;
+      this.vy = (Math.random()-0.5) * 0.6 * dpr;
+      this.size = (10 + Math.random()*20) * dpr;
+      this.angle = Math.random() * Math.PI*2;
+      this.spin  = (Math.random()-0.5) * 0.02;
+      this.alpha = 0.22 + Math.random()*0.45;
+      const shapes = ['square','triangle','circle'];
+      this.shapeType = shapes[(Math.random()*shapes.length)|0];
+    }
+  }
+
+  update(){
+    this.life++;
+
+    if(this.style === 'thriller'){
+      this.x += this.vx; this.y += this.vy;
+      if(this.y > ch){ this.y = -50*dpr; this.x = Math.random()*cw; }
+
+    } else if(this.style === 'amore'){
+      if(this.isPetal){
+        this.y += this.vy;
+        this.x += Math.sin(this.life*0.02 + this.angle) * (1.5*dpr);
+        this.angle += this.spin;
+        if(this.y > ch){ this.y = -20*dpr; this.x = Math.random()*cw; }
+      } else {
+        this.x += this.vx; this.y += this.vy;
+        if(this.x < 0) this.x = cw; if(this.x > cw) this.x = 0;
+        if(this.y < 0) this.y = ch; if(this.y > ch) this.y = 0;
+        this.alpha = 0.5 + Math.sin(this.life*this.pulseSpeed) * 0.5;
+      }
+
+    } else if(this.style === 'sexy'){
+      this.y += this.vy;
+      this.x += this.vx + Math.sin(this.life*0.02 + this.phase) * (this.wobble*dpr);
+      if(this.y < -40*dpr){
+        this.y = ch + 40*dpr;
+        this.x = Math.random()*cw;
+      }
+
+    } else {
+      this.x += this.vx; this.y += this.vy;
+      this.angle += this.spin;
+      if(this.x < -50*dpr) this.x = cw+50*dpr;
+      if(this.x > cw+50*dpr) this.x = -50*dpr;
+      if(this.y < -50*dpr) this.y = ch+50*dpr;
+      if(this.y > ch+50*dpr) this.y = -50*dpr;
+    }
+  }
+
+  draw(){
+    if(this.style === 'thriller'){
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(180,190,210,${this.alpha})`;
+      ctx.lineWidth = 1.5*dpr;
+      ctx.moveTo(this.x,this.y);
+      ctx.lineTo(this.x + this.vx, this.y + this.length);
+      ctx.stroke();
+
+    } else if(this.style === 'amore'){
+      if(this.isPetal){
+        ctx.save();
+        ctx.translate(this.x,this.y);
+        ctx.rotate(this.angle);
+        ctx.beginPath();
+        ctx.ellipse(0,0,this.size/2,this.size,0,0,Math.PI*2);
+        ctx.fillStyle = `rgba(${this.color},${this.alpha})`;
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,215,0,${this.alpha})`;
+        ctx.shadowBlur = 18*dpr;
+        ctx.shadowColor = "rgba(255,200,50,1)";
+        ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+    } else if(this.style === 'sexy'){
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${this.color},${this.alpha})`;
+      ctx.shadowBlur = 18*dpr;
+      ctx.shadowColor = `rgba(${this.color},0.9)`;
+      ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+
+    } else {
+      ctx.save();
+      ctx.translate(this.x,this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(255,255,255,${this.alpha})`;
+      ctx.lineWidth = 2*dpr;
+      if(this.shapeType === 'square'){
+        ctx.rect(-this.size/2,-this.size/2,this.size,this.size);
+      } else if(this.shapeType === 'circle'){
+        ctx.arc(0,0,this.size/2,0,Math.PI*2);
+      } else {
+        ctx.moveTo(0,-this.size/2);
+        ctx.lineTo(this.size/2,this.size/2);
+        ctx.lineTo(-this.size/2,this.size/2);
+        ctx.closePath();
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+function updateCanvasEffect(newStyle){
+  let targetCount = 120;
+  if(newStyle === 'thriller') targetCount = 350;
+  if(newStyle === 'amore')   targetCount = 100;
+  if(newStyle === 'sexy')    targetCount = 160;
+  if(newStyle === 'normale') targetCount = 60;
+
+  while(particles.length < targetCount) particles.push(new Particle(newStyle));
+  while(particles.length > targetCount) particles.pop();
+  particles.forEach(p => p.reset(newStyle));
+}
+
+function loopCanvas(){
+  ctx.clearRect(0,0,cw,ch);
+  particles.forEach(p=>{ p.update(); p.draw(); });
+  requestAnimationFrame(loopCanvas);
+}
+
+/* =========================
+   SCENES & WORLD
+   ========================= */
+const world = document.getElementById("world");
+const SCENE_DEPTH = 2200;
+
+const scenes = tracks.map((t,i)=>{
+  const el=document.createElement("div");
+  el.className="scene";
+  el.dataset.style=t.style;
+  el.style.backgroundImage = `url("${t.cover}")`;
+  el.innerHTML = `
+    <div class="meta">
+      <div class="title">${t.title}</div>
+      <div class="artist">${t.artist}</div>
+    </div>`;
+
+  // Click sullo sfondo/canva della copertina:
+  // - se è già attiva: play/pause
+  // - se non è attiva: ci salta e parte subito
+  el.addEventListener("click", ()=>{
+    if(i !== activeIndex){
+      jumpToIndex(i, true);
+    } else {
+      playOrToggle();
+    }
+  });
+
+  world.appendChild(el);
+  return { el, z:-i*SCENE_DEPTH, track:t, index:i };
+});
+const MAX_Z = SCENE_DEPTH * (tracks.length-1);
+
+/* =========================
+   MINI-MAP
+   ========================= */
+const minimap = document.getElementById("minimap");
+const dotItems = scenes.map((s,i)=>{
+  const wrapper=document.createElement("div");
+  wrapper.className="mm-item";
+  wrapper.innerHTML=`<span class="mm-label">${s.track.title}</span><div class="mm-dot"></div>`;
+  wrapper.addEventListener("click", ()=>{
+    jumpToIndex(i, false);
+  });
+  minimap.appendChild(wrapper);
+  return wrapper;
+});
+
+/* =========================
+   UI & LOGIC
+   ========================= */
+const ptSong=document.getElementById("pt-song");
+const ptArtist=document.getElementById("pt-artist");
+const playerTitleBlock=document.getElementById("playerTitle");
+const line=document.getElementById("line");
+const playBtn=document.getElementById("play");
+
+function setActiveStyle(styleKey){
+  document.body.dataset.activeStyle = styleKey || "normale";
+  updateCanvasEffect(styleKey || "normale");
+}
+
+function updateHUD(){
+  const t=scenes[activeIndex].track;
+  ptArtist.textContent = t.artist;
+  ptSong.textContent   = t.title;
+}
+
+function updateURL(){
+  const t = scenes[activeIndex].track;
+  const hash = "#" + t.slug;
+  if(location.hash !== hash) history.replaceState(null, "", hash);
+}
+
+/* =========================
+   CAMERA & SNAP
+   ========================= */
+let cameraZ=0, targetZ=0, activeIndex=0, lastActiveIndex=-1;
+const SPEED=0.95;
+let snapTimer=null, snapArmed=false, hasThumped=false;
+
+function computeActiveIndex(zVal){
+  let bestI=0, bestD=Infinity;
+  for(let i=0;i<scenes.length;i++){
+    const rz = scenes[i].z + zVal;
+    const d = Math.abs(rz);
+    if(d<bestD){ bestD=d; bestI=i; }
+  }
+  return bestI;
+}
+
+function armSnap(){
+  snapArmed=true; hasThumped=false;
+  if(snapTimer) clearTimeout(snapTimer);
+  snapTimer=setTimeout(()=>{
+    if(!snapArmed) return;
+    const nearest = Math.round(targetZ / SCENE_DEPTH) * SCENE_DEPTH;
+    targetZ = clamp(nearest, 0, MAX_Z);
+  }, 140);
+}
+
+function triggerThump(sceneIndex){
+  const s=scenes[sceneIndex];
+  if(!s || !s.el) return;
+  s.el.classList.remove("thump-effect");
+  void s.el.offsetWidth;
+  s.el.classList.add("thump-effect");
+}
+
+let pendingPlayIndex = null;
+function jumpToIndex(i, autoplay){
+  targetZ = clamp(i*SCENE_DEPTH, 0, MAX_Z);
+  snapArmed=false;
+  pendingPlayIndex = autoplay ? i : null;
+}
+
+/* =========================
+   AUDIO ENGINE (crossfade + karaoke)
+   ========================= */
+const audioA=document.getElementById("audioA");
+const audioB=document.getElementById("audioB");
+const audios=[audioA,audioB];
+
+let audioCtx=null, srcA=null, srcB=null, gA=null, gB=null;
+let currentPlayer=0, playingIndex=null;
+let vttSession=0, currentTrackEl=null;
+
+function ensureAudioGraph(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  srcA = audioCtx.createMediaElementSource(audioA);
+  srcB = audioCtx.createMediaElementSource(audioB);
+  gA = audioCtx.createGain();
+  gB = audioCtx.createGain();
+  gA.gain.value = 1;
+  gB.gain.value = 0;
+  srcA.connect(gA).connect(audioCtx.destination);
+  srcB.connect(gB).connect(audioCtx.destination);
+}
+
+function getCurrentAudio(){ return audios[currentPlayer]; }
+function getOtherAudio(){ return audios[1-currentPlayer]; }
+function getCurrentGain(){ return currentPlayer===0 ? gA : gB; }
+function getOtherGain(){ return currentPlayer===0 ? gB : gA; }
+
+function clearKaraoke(){
+  vttSession++;
+  line.style.opacity=0;
+  line.textContent="";
+  if(currentTrackEl){
+    try{ currentTrackEl.remove(); }catch(e){}
+    currentTrackEl=null;
+  }
+}
+
+function bindKaraokeTo(playerEl, trackObj){
+  clearKaraoke();
+  const mySession=vttSession;
+  const tr=document.createElement("track");
+  tr.kind="subtitles"; tr.srclang="it"; tr.label="lyrics";
+  tr.src = encPath(trackObj.vtt);
+  tr.default=true;
+  playerEl.appendChild(tr);
+  currentTrackEl=tr;
+
+  tr.addEventListener("load", ()=>{
+    if(mySession!==vttSession) return;
+    const tt=tr.track; tt.mode="hidden";
+    let lastCue=null;
+
+    const refresh=()=>{
+      if(mySession!==vttSession) return;
+      if(playingIndex===null || activeIndex!==playingIndex){ line.style.opacity=0; return; }
+      if(getCurrentAudio().paused){ line.style.opacity=0; return; }
+      const a=tt.activeCues;
+      if(!a || !a.length){ line.style.opacity=0; return; }
+      const cue=a[0];
+      if(cue===lastCue) return;
+      lastCue=cue;
+
+      const trClass = pickTransition(trackObj.style);
+      line.className = trClass;
+      line.style.opacity = 0;
+
+      setTimeout(()=>{
+        if(mySession!==vttSession) return;
+        if(playingIndex===null || activeIndex!==playingIndex){ line.style.opacity=0; return; }
+        if(getCurrentAudio().paused){ line.style.opacity=0; return; }
+        line.textContent = cue.text;
+        line.className = "t-fade-in";
+        line.style.opacity = 1;
+      }, 150);
+    };
+
+    tt.addEventListener("cuechange", refresh);
+    playerEl.addEventListener("timeupdate", refresh);
+    playerEl.addEventListener("seeked", ()=>{ lastCue=null; refresh(); });
+    refresh();
+  });
+}
+
+function updatePlayingUI(){
+  const isPlaying = (playingIndex!==null && !getCurrentAudio().paused);
+  playBtn.textContent = (isPlaying && activeIndex===playingIndex) ? "PAUSE" : "PLAY";
+
+  scenes.forEach((s,i)=>{
+    s.el.classList.toggle("is-playing", (playingIndex===i && isPlaying));
+  });
+  dotItems.forEach((d,i)=>{
+    d.classList.toggle("active", i===activeIndex);
+    d.classList.toggle("playing", (i===playingIndex && isPlaying));
+  });
+
+  scenes.forEach((s,i)=>{
+    const should = (playingIndex===i) && (activeIndex===i) && isPlaying;
+    s.el.classList.toggle("breathing", should);
+    if(should){
+      const {dur, amp} = bpmToBreath(s.track.bpm, s.track.style);
+      s.el.style.setProperty("--breatheDur", `${dur}s`);
+      s.el.style.setProperty("--breatheScale", `${amp}`);
+    }
+  });
+
+  if(playingIndex===null || activeIndex!==playingIndex || getCurrentAudio().paused){
+    line.style.opacity=0;
+  }
+}
+
+async function playIndex(index, mode){
+  // mode: "toggle" | "force"
+  ensureAudioGraph();
+  await audioCtx.resume();
+
+  const wantIndex=index;
+  const want=scenes[wantIndex].track;
+
+  // niente in play -> start
+  if(playingIndex===null){
+    playingIndex=wantIndex;
+    const a=getCurrentAudio();
+    a.src = encPath(want.audio);
+    a.load();
+    setActiveStyle(want.style);
+    bindKaraokeTo(a, want);
+    await a.play();
+    updatePlayingUI();
+    return;
+  }
+
+  // stessa traccia -> toggle/pause oppure forza play
+  if(playingIndex===wantIndex){
+    const a=getCurrentAudio();
+    if(mode === "toggle"){
+      if(a.paused) await a.play();
+      else { a.pause(); line.style.opacity=0; }
+    } else {
+      if(a.paused) await a.play();
+    }
+    updatePlayingUI();
+    return;
+  }
+
+  // crossfade su nuova traccia
+  const FADE=1.15;
+  const prevAudio=getCurrentAudio();
+  const nextAudio=getOtherAudio();
+  const prevGain=getCurrentGain();
+  const nextGain=getOtherGain();
+  const next=scenes[wantIndex].track;
+
+  playingIndex=wantIndex;
+  setActiveStyle(next.style);
+
+  nextAudio.pause();
+  nextAudio.currentTime=0;
+  nextAudio.src = encPath(next.audio);
+  nextAudio.load();
+
+  bindKaraokeTo(nextAudio, next);
+
+  nextGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  prevGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  nextGain.gain.setValueAtTime(0, audioCtx.currentTime);
+  prevGain.gain.setValueAtTime(prevGain.gain.value, audioCtx.currentTime);
+
+  await nextAudio.play();
+  nextGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + FADE);
+  prevGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + FADE);
+
+  setTimeout(()=>{
+    try{ prevAudio.pause(); prevAudio.removeAttribute("src"); prevAudio.load(); }catch(e){}
+  }, (FADE*1000)+60);
+
+  currentPlayer = 1-currentPlayer;
+  updatePlayingUI();
+}
+
+async function playOrToggle(){
+  await playIndex(activeIndex, "toggle");
+}
+
+/* Autoplay next when track ends */
+function handleEnded(endedEl){
+  // Parte solo se l'audio finito è quello "corrente" e noi siamo in modalità playing
+  if(playingIndex===null) return;
+  if(endedEl !== getCurrentAudio()) return;
+
+  const nextIndex = (playingIndex + 1) % scenes.length; // loop alla prima
+  // Salta anche la camera alla prossima scena (così è coerente con l'autoplay)
+  jumpToIndex(nextIndex, true);
+}
+
+audioA.addEventListener("ended", ()=>handleEnded(audioA));
+audioB.addEventListener("ended", ()=>handleEnded(audioB));
+
+/* Controls */
+document.getElementById("play").addEventListener("click", playOrToggle);
+
+document.getElementById("back").addEventListener("click", ()=>{
+  const a=getCurrentAudio();
+  a.currentTime = Math.max(0, (a.currentTime||0) - 10);
+});
+document.getElementById("forward").addEventListener("click", ()=>{
+  const a=getCurrentAudio();
+  a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
+});
+
+function scrub(deltaY){
+  if(playingIndex===null) return;
+  const a=getCurrentAudio();
+  const seconds=(deltaY/100)*2.0;
+  a.currentTime = clamp(a.currentTime + seconds, 0, (a.duration||a.currentTime+10));
+  if(activeIndex!==playingIndex) line.style.opacity=0;
+}
+
+window.addEventListener("wheel",(e)=>{
+  e.preventDefault();
+  if(e.shiftKey){ scrub(e.deltaY); return; }
+  targetZ = clamp(targetZ + e.deltaY * SPEED, 0, MAX_Z);
+  armSnap();
+},{passive:false});
+
+/* =========================
+   RENDER LOOP
+   ========================= */
+function updateScenes(){
+  activeIndex = computeActiveIndex(cameraZ);
+
+  if(activeIndex !== lastActiveIndex){
+    const t = scenes[activeIndex].track;
+    setActiveStyle(t.style);
+    updateHUD();
+    updateURL();
+    lastActiveIndex = activeIndex;
+  }
+
+  for(const s of scenes){
+    const rz = s.z + cameraZ;
+    const dist = Math.abs(rz);
+    const t = clamp(1 - (dist/SCENE_DEPTH), 0, 1);
+    const scale = 0.70 + t*0.30;
+    const opacity = t;
+
+    s.el.style.setProperty("--rz", `${rz}px`);
+    s.el.style.setProperty("--scale", `${scale}`);
+
+    if(!s.el.classList.contains("breathing")){
+      s.el.style.transform = `translateZ(${rz}px) scale(${scale})`;
+    }
+    s.el.style.opacity = opacity.toFixed(3);
+    s.el.style.pointerEvents = (opacity > 0.35) ? "auto" : "none";
+  }
+
+  updatePlayingUI();
+}
+
+function tick(){
+  const diff = (targetZ - cameraZ);
+  cameraZ += diff * 0.12;
+
+  if(!hasThumped && Math.abs(diff) < 20 && Math.abs(targetZ % SCENE_DEPTH) < 10){
+    triggerThump(activeIndex);
+    hasThumped=true;
+  }
+  if(Math.abs(diff) < 0.35) cameraZ = targetZ;
+
+  // Se avevamo un "pending play" e siamo arrivati vicino al target, parte la traccia
+  if(pendingPlayIndex !== null && Math.abs(diff) < 3){
+    const idx = pendingPlayIndex;
+    pendingPlayIndex = null;
+    playIndex(idx, "force");
+  }
+
+  updateScenes();
+  requestAnimationFrame(tick);
+}
+
+/* Parallax */
+let mouseX=0, mouseY=0;
+window.addEventListener("mousemove", (e)=>{
+  mouseX=(e.clientX/window.innerWidth)*2-1;
+  mouseY=(e.clientY/window.innerHeight)*2-1;
+  world.style.transform = `rotateY(${mouseX*5}deg) rotateX(${-mouseY*5}deg)`;
+});
+
+/* INIT */
+window.addEventListener("load", ()=>{
+  // hash jump
+  const hash = location.hash.slice(1);
+  if(hash){
+    const idx = tracks.findIndex(t => t.slug === hash);
+    if(idx >= 0){
+      activeIndex = idx;
+      targetZ = idx * SCENE_DEPTH;
+      cameraZ = targetZ;
+    }
+  }
+
+  updateCanvasEffect(tracks[activeIndex].style);
+  setActiveStyle(tracks[activeIndex].style);
+
+  if(particles.length === 0){
+    for(let i=0;i<100;i++) particles.push(new Particle("normale"));
+  }
+
+  loopCanvas();
+  updateHUD();
+  updateScenes();
+  playerTitleBlock.classList.add("visible");
+  requestAnimationFrame(tick);
+});
+</script>
+
+</body>
+</html>
