@@ -10,135 +10,82 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
+
+/* Sempre e solo il tuo pallino, mai freccia/hand */
 body{cursor:none;}
-:root{
-  --beat: 0;          /* 0..1 */
-  --beatSoft: 0;      /* 0..1 */
-  --spotX1: 22%;
-  --spotY1: 25%;
-  --spotX2: 78%;
-  --spotY2: 35%;
-  --spotX3: 60%;
-  --spotY3: 78%;
-  --zoom: 1;          /* pinch zoom */
+html, body, * { cursor:none !important; }
+*:hover, *:active, *:focus { cursor:none !important; }
+a, button, [role="button"], input, textarea, select { cursor:none !important; }
+
+:root{ --hudTx: rgba(255,255,255,.9); }
+
+/* Cursor canvas (trail leggero) */
+#cursor-canvas{
+  position:fixed; inset:0;
+  z-index:80;
+  pointer-events:none;
 }
-html, body, * { cursor: none !important; }
-*:hover, *:active, *:focus { cursor: none !important; }
-a, button, [role="button"], input, textarea, select { cursor: none !important; }
-/* Cursor trail */
-#cursor-canvas{position:fixed; inset:0; z-index:90; pointer-events:none;}
 
-/* Particles above cover */
-#bg-canvas{position:fixed; inset:0; z-index:15; pointer-events:none;}
+/* BG particles canvas (leggero, niente blend strani) */
+#bg-canvas{
+  position:fixed; inset:0;
+  z-index:12;
+  pointer-events:none;
+}
 
-/* Atmosphere above cover */
+/* FX layer: SOLO gradienti + opacity (niente mix-blend-mode, niente filter) */
 #fx-layer{
   position:fixed; inset:0;
-  z-index:20;
+  z-index:18;
   pointer-events:none;
-  mix-blend-mode:overlay;
-  transition:filter .35s ease, opacity .35s ease;
-}
-#style-overlay{
-  position:fixed; inset:0;
-  z-index:21;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity .35s ease;
+  opacity:.9;
+  will-change: opacity, transform;
 }
 
-/* Thriller: vignette + grain + stage shake */
-body[data-active-style="thriller"] #style-overlay{
-  opacity:1;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.88) 100%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 7px);
-  mix-blend-mode:multiply;
-  filter:contrast(1.05) brightness(0.92);
-}
-@keyframes thrillerShake{
-  0%{transform:translate(0,0)}
-  20%{transform:translate(1px,-1px)}
-  40%{transform:translate(-1px,1px)}
-  60%{transform:translate(2px,0px)}
-  80%{transform:translate(-1px,-1px)}
-  100%{transform:translate(0,0)}
-}
-body[data-active-style="thriller"] #stage{ animation:thrillerShake .55s steps(2,end) infinite; }
-
-/* Amore: bloom-ish softness */
-body[data-active-style="amore"] #style-overlay{
-  opacity:1;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255,120,170,0.12) 0%, transparent 55%),
-    radial-gradient(circle at 70% 65%, rgba(255,60,120,0.12) 0%, rgba(40,0,20,0.38) 70%);
-  mix-blend-mode:screen;
-  filter: blur(0.9px) saturate(1.15) brightness(1.02);
-}
-
-/* Sexy: neon sweep + chroma-ish */
-body[data-active-style="sexy"] #style-overlay{
-  opacity:1;
-  background:
-    linear-gradient(120deg, rgba(170,60,255,0.0) 0%, rgba(170,60,255,0.26) 46%, rgba(255,230,60,0.20) 54%, rgba(255,230,60,0.0) 100%),
-    radial-gradient(circle at 50% 55%, rgba(255,60,200,0.12) 0%, transparent 60%);
-  mix-blend-mode:screen;
-  animation: neonSweep 2.8s ease-in-out infinite;
-  filter: saturate(1.38) contrast(1.07);
-}
-@keyframes neonSweep{
-  0%{background-position:-45% 0%, 0% 0%}
-  50%{background-position:145% 0%, 0% 0%}
-  100%{background-position:-45% 0%, 0% 0%}
-}
-
-/* Normale */
-body[data-active-style="normale"] #style-overlay{
-  opacity:.35;
-  background: radial-gradient(circle, rgba(200,200,255,0.04) 0%, transparent 70%);
-}
-
-/* FX backgrounds */
+/* Stili: semplici e safe */
 body[data-active-style="thriller"] #fx-layer{
-  background: radial-gradient(circle at center, transparent 30%, #000 120%);
-  box-shadow: inset 0 0 calc(110px * (1 + var(--beatSoft))) rgba(0,0,0,0.92);
-  filter: contrast(1.22) brightness(0.88) sepia(0.15);
-  opacity: .95;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(140,40,40,0.18) 0%, transparent 55%),
+    radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.85) 70%);
+  animation: fxPulse 2.0s linear infinite;
 }
 body[data-active-style="amore"] #fx-layer{
   background:
-    radial-gradient(circle at 30% 30%, rgba(255,120,170,0.22) 0%, transparent 55%),
-    radial-gradient(circle at 70% 65%, rgba(255,60,120,0.20) 0%, rgba(40,0,20,0.65) 70%),
-    linear-gradient(180deg, rgba(0,0,0,0.14), rgba(0,0,0,0.70));
-  filter: blur(0.4px) brightness(calc(1.07 + var(--beatSoft)*0.10)) contrast(1.08);
-  opacity: .95;
+    radial-gradient(circle at 30% 30%, rgba(255,120,170,0.16) 0%, transparent 55%),
+    radial-gradient(circle at 70% 70%, rgba(255,80,140,0.12) 0%, rgba(0,0,0,0.78) 70%);
+  animation: fxPulse 3.2s ease-in-out infinite;
 }
 body[data-active-style="sexy"] #fx-layer{
   background:
-    radial-gradient(closest-side at var(--spotX1) var(--spotY1), rgba(170, 60, 255, calc(0.38 + var(--beat)*0.24)) 0%, transparent 62%),
-    radial-gradient(closest-side at var(--spotX2) var(--spotY2), rgba(255, 230, 60,  calc(0.28 + var(--beat)*0.20)) 0%, transparent 60%),
-    radial-gradient(closest-side at var(--spotX3) var(--spotY3), rgba(255, 60, 200, calc(0.18 + var(--beat)*0.16)) 0%, transparent 64%),
-    radial-gradient(circle at 50% 55%, rgba(40, 0, 70, 0.0) 0%, rgba(18, 0, 25, 0.88) 76%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 6px);
-  background-blend-mode: screen, screen, screen, normal, overlay;
-  filter: contrast(calc(1.20 + var(--beatSoft)*0.20)) saturate(2.05) brightness(calc(0.93 + var(--beatSoft)*0.08));
-  opacity:.98;
+    radial-gradient(circle at 25% 30%, rgba(170,60,255,0.22) 0%, transparent 60%),
+    radial-gradient(circle at 75% 40%, rgba(255,230,60,0.18) 0%, transparent 60%),
+    radial-gradient(circle at 55% 80%, rgba(255,60,200,0.12) 0%, transparent 65%),
+    radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.85) 72%);
+  animation: fxPulse 2.6s ease-in-out infinite;
 }
 body[data-active-style="normale"] #fx-layer{
-  background: radial-gradient(circle, rgba(200,200,255,0.05) 0%, transparent 80%);
-  opacity:.55;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(200,200,255,0.06) 0%, transparent 70%),
+    radial-gradient(circle at 50% 60%, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.80) 75%);
+  animation:none;
 }
 
-/* Stage / World */
-#stage{position:fixed; inset:0; perspective:1800px; overflow:hidden; z-index:10;}
-#world{
-  position:absolute; inset:0;
-  transform-style:preserve-3d;
-  transform: scale(var(--zoom));
-  transform-origin:center center;
+@keyframes fxPulse{
+  0%{opacity:.78}
+  50%{opacity:.98}
+  100%{opacity:.78}
 }
 
-/* Scene */
+/* Stage */
+#stage{
+  position:fixed; inset:0;
+  perspective:1800px;
+  overflow:hidden;
+  z-index:10;
+}
+#world{ position:absolute; inset:0; transform-style:preserve-3d; }
+
+/* Scene: NO specchio (rimossa ::after) */
 .scene{
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
@@ -148,33 +95,25 @@ body[data-active-style="normale"] #fx-layer{
   background-size:contain;
   will-change:transform,opacity;
   opacity:0;
-  cursor:none !important;
 }
 .scene::before{
   content:"";
   position:absolute; inset:0;
-  background:linear-gradient(to bottom, rgba(0,0,0,.12), rgba(0,0,0,.86));
+  background:linear-gradient(to bottom, rgba(0,0,0,.10), rgba(0,0,0,.82));
   pointer-events:none;
   z-index:1;
 }
-/* ✅ specchio rimosso: NON c’è .scene::after */
 .scene > *{position:relative; z-index:2}
 
-body[data-active-style="sexy"] .scene::before{
-  background:
-    radial-gradient(circle at 50% 55%, rgba(255,230,60,0.10) 0%, transparent 45%),
-    radial-gradient(circle at 50% 55%, rgba(170,60,255,0.14) 0%, transparent 60%),
-    linear-gradient(to bottom, rgba(0,0,0,.10), rgba(0,0,0,.88));
-  mix-blend-mode: screen;
-}
-
+/* Thump */
 @keyframes thumpAnim{
   0%{transform:scale(1)}
-  50%{transform:scale(1.02);filter:brightness(1.08)}
+  50%{transform:scale(1.02)}
   100%{transform:scale(1)}
 }
 .thump-effect{ animation: thumpAnim .15s ease-out forwards; }
 
+/* Meta */
 .meta{
   text-align:center;
   pointer-events:none;
@@ -186,66 +125,58 @@ body[data-active-style="sexy"] .scene::before{
   margin:0;
   font-size:clamp(40px,7vw,80px);
   line-height:1.05;
-  text-shadow:0 12px 44px rgba(0,0,0,1);
+  text-shadow:0 10px 30px rgba(0,0,0,1);
 }
 .meta .artist{
   margin-top:12px;
-  font-size:1.2rem;
-  opacity:.8;
+  font-size:1.1rem;
+  opacity:.75;
   letter-spacing:2px;
   text-transform:uppercase;
-  text-shadow:0 10px 36px rgba(0,0,0,.9);
+  text-shadow:0 10px 26px rgba(0,0,0,.9);
 }
 .scene.is-playing .meta{
   opacity:0;
   transform:translateY(-10px);
-  filter:blur(4px);
+  filter:blur(3px);
 }
 
-/* Fonts */
-.scene[data-style="thriller"] .meta .title{ font-family:"Rubik Dirt", cursive; letter-spacing:.35px; color:#ffcece; }
-.scene[data-style="normale"]  .meta .title{ font-family:"Roboto", sans-serif; font-weight:900; letter-spacing:-1px; }
-.scene[data-style="amore"]    .meta .title{ font-family:"Playfair Display", serif; font-weight:700; font-style:italic; color:#ffe0f0; }
-.scene[data-style="sexy"]     .meta .title{
-  font-family:"Bodoni Moda", serif; font-weight:700; letter-spacing:.75px;
-  color:#f7d2ff;
-  text-shadow: 0 10px 40px rgba(0,0,0,1), 0 0 18px rgba(170,60,255,0.35), 0 0 14px rgba(255,230,60,0.22);
-}
-
-/* Tutorial */
+/* Tutorial (top-left) */
 #tutorial{
   position:fixed; top:18px; left:18px; z-index:60;
-  font:12px/1.5 "Roboto", sans-serif;
-  color:rgba(255,255,255,0.72);
+  font:12px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color:rgba(255,255,255,0.78);
+  text-align:left;
   pointer-events:none;
-  background:rgba(0,0,0,0.58);
+  background:rgba(0,0,0,0.55);
   padding:10px 14px;
-  border-radius:12px;
+  border-radius:10px;
   border:1px solid rgba(255,255,255,0.12);
   backdrop-filter:blur(6px);
   max-width:min(360px, 70vw);
 }
 #tutorial strong{color:#fff}
 
-/* Minimap */
+/* Mini-map */
 #minimap{
   position:fixed; right:20px; top:50%; transform:translateY(-50%);
-  z-index:40; display:flex; flex-direction:column; gap:16px; align-items:flex-end;
+  z-index:40; display:flex; flex-direction:column; gap:14px; align-items:flex-end;
 }
-.mm-item{display:flex;align-items:center;justify-content:flex-end;cursor:pointer}
+.mm-item{display:flex;align-items:center;justify-content:flex-end}
 .mm-dot{
   width:8px;height:8px;border-radius:50%;
   border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);
-  transition:all .3s ease;margin-left:12px;position:relative;
+  transition:all .2s ease;margin-left:12px;position:relative;
 }
-.mm-item:hover .mm-dot{background:#fff;transform:scale(1.2)}
-.mm-item.active .mm-dot{background:#fff;border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,0.5);transform:scale(1.3)}
-.mm-item.playing .mm-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid #fff;opacity:.6}
+.mm-item.active .mm-dot{background:#fff;border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,0.35);transform:scale(1.25)}
+.mm-item.playing .mm-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(255,255,255,0.7);opacity:.55}
 .mm-label{
-  font:11px "Roboto", sans-serif; text-transform:uppercase; letter-spacing:1px; color:#fff;
-  opacity:.3; transition:opacity .3s; text-shadow:0 2px 4px rgba(0,0,0,0.8);
+  font:11px system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  text-transform:uppercase; letter-spacing:1px; color:#fff;
+  opacity:.28; transition:opacity .2s;
+  text-shadow:0 2px 4px rgba(0,0,0,0.8);
 }
-.mm-item:hover .mm-label, .mm-item.active .mm-label{opacity:1;font-weight:700}
+.mm-item.active .mm-label{opacity:1;font-weight:700}
 
 /* Karaoke */
 #karaoke{
@@ -254,222 +185,70 @@ body[data-active-style="sexy"] .scene::before{
 }
 #line{
   max-width:1100px; text-align:center; line-height:1.2; opacity:0;
-  transition:opacity .18s ease, transform .32s ease, filter .32s ease;
+  transition:opacity .15s ease, transform .25s ease;
   text-shadow:0 12px 44px rgba(0,0,0,1);
   font-size:clamp(30px,5vw,64px);
 }
 
-/* Cue-driven typography */
-body[data-active-style="thriller"] #line{
-  font-family:"Rubik Dirt", cursive;
-  color:#ff4444;
-  letter-spacing:.8px;
-  text-shadow: 0 14px 60px rgba(0,0,0,1), 0 0 16px rgba(255,60,60,0.35);
-  filter: contrast(1.2);
-}
-body[data-active-style="normale"] #line{
-  font-family:"Roboto", sans-serif;
-  font-weight:900;
-  letter-spacing:-1px;
-}
-body[data-active-style="amore"] #line{
-  font-family:"Playfair Display", serif;
-  font-weight:700;
-  font-style:italic;
-  color:#ffe0f0;
-  letter-spacing:.2px;
-}
-body[data-active-style="sexy"] #line{
-  font-family:"Bodoni Moda", serif;
-  font-weight:700;
-  font-style:italic;
-  letter-spacing:1.2px;
-  color:#f3c6ff;
-  text-shadow: 0 14px 60px rgba(0,0,0,1), 0 0 26px rgba(170,60,255,0.45), 0 0 18px rgba(255,230,60,0.22);
-}
-
-/* Transitions */
-.t-fade-in{transform:none;filter:none}
-.t-pop{transform:scale(1.08);filter:none}
-.t-slide-up{transform:translateY(40px);filter:none}
-.t-slide-down{transform:translateY(-40px);filter:none}
-.t-slide-left{transform:translateX(60px);filter:none}
-.t-slide-right{transform:translateX(-60px);filter:none}
-.t-rotate{transform:rotate(-3deg) scale(.98);filter:none}
-.t-blur{transform:none;filter:blur(14px)}
-.t-stretch{transform:scaleY(.72);filter:none}
-.t-snap{transform:scale(.92);filter:contrast(1.2)}
-.t-jitter{transform:translateX(-6px) rotate(.8deg);filter:none}
-
-/* Player Title + VU */
+/* Player title + controls */
 #playerTitle{
-  position:fixed; bottom:106px; left:40px; z-index:32;
-  display:flex; align-items:flex-end; gap:14px;
-  opacity:0; transform:translateY(20px); transition:all .45s ease;
-  text-shadow:0 10px 30px rgba(0,0,0,1);
+  position:fixed; bottom:88px; left:40px; z-index:32;
+  font:700 30px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#fff;
+  opacity:0; transform:translateY(20px); transition:all .4s ease;
+  text-shadow:0 10px 26px rgba(0,0,0,1);
 }
 #playerTitle.visible{opacity:1;transform:translateY(0)}
-#pt-text{ font:700 30px/1 "Roboto", sans-serif; letter-spacing:-0.5px; }
-#pt-text span{
-  display:block; font-size:13px; font-weight:400; opacity:.65;
+#playerTitle span{
+  display:block; font-size:13px; font-weight:500; opacity:.65;
   margin-bottom:6px; text-transform:uppercase; letter-spacing:2px;
 }
-#vu{
-  width:120px; height:44px;
-  border-radius:12px;
-  background:rgba(0,0,0,0.35);
-  border:1px solid rgba(255,255,255,0.10);
-  backdrop-filter:blur(6px);
-}
 
-/* Controls */
 #controls{
-  position:fixed; bottom:28px; left:40px;
-  z-index:31; user-select:none;
-  display:flex; flex-direction:column; gap:10px;
-  width:min(560px, 88vw);
+  position:fixed; bottom:40px; left:40px; display:flex; gap:12px;
+  font:13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  opacity:.92; z-index:31; user-select:none;
+  align-items:center;
 }
-#ctrl-row{
-  display:flex; align-items:center; gap:10px;
-  background:rgba(0,0,0,0.38);
-  border:1px solid rgba(255,255,255,0.12);
-  backdrop-filter:blur(8px);
-  border-radius:18px;
-  padding:10px 12px;
-}
-.ctrl-btn{
-  appearance:none;
-  border:1px solid rgba(255,255,255,0.14);
-  background:rgba(255,255,255,0.08);
-  color:#fff;
-  border-radius:14px;
-  padding:10px 12px;
-  cursor:pointer;
-  font:700 12px/1 "Roboto", sans-serif;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  transition:transform .12s ease, background .12s ease, color .12s ease;
+#controls button{
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.22);
+  color:#fff; padding:8px 14px; border-radius:18px;
+  transition:all .15s; font-weight:800; text-transform:uppercase; font-size:11px; letter-spacing:1px;
   position:relative;
 }
-.ctrl-btn:hover{ background:#fff; color:#000; }
-.ctrl-btn:active{ transform:scale(0.98); }
-.ctrl-btn.icon{ width:54px; display:flex; align-items:center; justify-content:center; }
-.ctrl-btn.play{ width:92px; }
-.ctrl-btn[data-tip]::after{
-  content:attr(data-tip);
+#controls button:hover{background:#fff;color:#000}
+#controls button:active{transform:scale(0.98)}
+
+/* Tooltip */
+#controls button[data-tip]::after{
+  content: attr(data-tip);
   position:absolute;
   left:50%; transform:translateX(-50%) translateY(-10px);
   bottom:100%;
-  opacity:0; pointer-events:none;
   white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
   background:rgba(0,0,0,0.72);
   border:1px solid rgba(255,255,255,0.14);
+  backdrop-filter:blur(6px);
   padding:8px 10px;
-  border-radius:12px;
-  font:12px/1 "Roboto", sans-serif;
+  border-radius:10px;
+  font:12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color:#fff;
-  box-shadow:0 12px 40px rgba(0,0,0,0.65);
+  box-shadow:0 12px 40px rgba(0,0,0,0.55);
   transition:opacity .14s ease, transform .14s ease;
-  max-width:min(420px, 75vw);
-  overflow:hidden; text-overflow:ellipsis;
-}
-.ctrl-btn:hover::after{ opacity:1; transform:translateX(-50%) translateY(-16px); }
-
-/* Progress */
-#progressWrap{
-  position:relative;
-  height:12px;
-  border-radius:999px;
-  background:rgba(255,255,255,0.10);
-  border:1px solid rgba(255,255,255,0.10);
+  max-width:min(360px, 70vw);
   overflow:hidden;
-  cursor:pointer;
+  text-overflow:ellipsis;
 }
-#progressFill{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg, rgba(170,60,255,0.95), rgba(255,230,60,0.85));
-  box-shadow:0 0 18px rgba(170,60,255,0.25);
-}
-#progressHandle{
-  position:absolute;
-  top:50%;
-  width:18px; height:18px;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
-  background:rgba(255,255,255,0.92);
-  box-shadow:0 0 22px rgba(170,60,255,0.45), 0 0 18px rgba(255,230,60,0.25);
-  left:0%;
-  pointer-events:none;
-}
-#progressTip{
-  position:absolute;
-  bottom:28px; left:0;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,0.74);
-  border:1px solid rgba(255,255,255,0.14);
-  border-radius:12px;
-  padding:8px 10px;
-  font:12px/1.2 "Roboto", sans-serif;
-  color:#fff;
-  max-width:min(520px, 90vw);
-  box-shadow:0 12px 40px rgba(0,0,0,0.65);
-  opacity:0; pointer-events:none;
-  transition:opacity .12s ease;
-}
-#progressTip .time{opacity:.78; font-weight:800; margin-bottom:4px;}
-#progressTip .cue{opacity:.98;}
+#controls button[data-tip]:hover::after{ opacity:1; transform:translateX(-50%) translateY(-16px); }
 
-/* Modes row */
-#mode-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 2px;}
-.mode-group{display:flex; gap:10px; flex-wrap:wrap;}
-.pill{
-  border:1px solid rgba(255,255,255,0.14);
-  background:rgba(255,255,255,0.08);
-  color:#fff;
-  border-radius:999px;
-  padding:8px 12px;
-  cursor:pointer;
-  font:800 11px/1 "Roboto", sans-serif;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  transition:background .12s ease, color .12s ease, transform .12s ease;
-}
-.pill:hover{background:#fff;color:#000}
-.pill:active{transform:scale(0.98)}
-.pill.active{
-  background:linear-gradient(90deg, rgba(170,60,255,0.95), rgba(255,230,60,0.85));
-  color:#000;
-  border-color:rgba(255,255,255,0.18);
-}
-
-/* Breathing */
-@keyframes bgPump{
-  0%   { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
-  50%  { transform:translateZ(var(--rz, 0px)) scale(calc(var(--scale, 1) * var(--breatheScale, 1.12))); }
-  100% { transform:translateZ(var(--rz, 0px)) scale(var(--scale, 1)); }
-}
-.scene.breathing{ animation:bgPump var(--breatheDur, 1.2s) linear infinite; }
-
-/* Cinematic mode: hide UI */
-body.cinematic #tutorial,
-body.cinematic #minimap,
-body.cinematic #controls,
-body.cinematic #playerTitle{
-  opacity:0 !important;
-  pointer-events:none !important;
-}
-body.cinematic #karaoke{ z-index:40; }
-
-/* Responsive */
 @media (max-width:600px){
-  #playerTitle{left:18px; bottom:118px}
-  #pt-text{font-size:22px}
-  #controls{left:18px; width:min(620px, 92vw)}
-  #tutorial{max-width:84vw}
-  .ctrl-btn.icon{width:52px}
-  .ctrl-btn.play{width:96px}
+  #tutorial{max-width:80vw}
+  #playerTitle{font-size:22px; bottom:88px; left:18px}
+  #controls{left:18px; gap:10px}
+  #controls button{padding:8px 12px}
 }
+
 </style>
 </head>
 
