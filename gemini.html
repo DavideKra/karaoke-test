@@ -22,7 +22,9 @@ body{cursor:none;}
   --spotY3: 78%;
   --zoom: 1;          /* pinch zoom */
 }
-
+html, body, * { cursor: none !important; }
+*:hover, *:active, *:focus { cursor: none !important; }
+a, button, [role="button"], input, textarea, select { cursor: none !important; }
 /* Cursor trail */
 #cursor-canvas{position:fixed; inset:0; z-index:90; pointer-events:none;}
 
@@ -146,7 +148,7 @@ body[data-active-style="normale"] #fx-layer{
   background-size:contain;
   will-change:transform,opacity;
   opacity:0;
-  cursor:pointer;
+  cursor:none !important;
 }
 .scene::before{
   content:"";
