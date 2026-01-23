@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Davide*Kra — Album 3D V11 (Sexy Neon + Cursor Trail + Prev/Next)</title>
+<title>Davide*Kra — Album 3D V11</title>
+
+<!-- Speed hints -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://i.ibb.co" crossorigin />
 
 <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Roboto:wght@300;400;700;900&family=Playfair+Display:wght@600;700&family=Bodoni+Moda:wght@600;700&display=swap" rel="stylesheet" />
 
@@ -15,8 +20,77 @@ html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
 @media (hover:hover) and (pointer:fine){
   html,body,*{ cursor:none !important; }
 }
-
 :root{ --hudTx: rgba(255,255,255,.9); }
+
+/* =========================
+   LOADER
+   ========================= */
+#loader{
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  background:#050505;
+}
+#loader.hide{
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .55s ease;
+}
+#loaderBox{
+  width:min(720px, 90vw);
+  text-align:center;
+  padding:26px 18px;
+}
+#loaderTitle{
+  font:900 clamp(22px, 4.2vw, 44px)/1.1 "Roboto", sans-serif;
+  letter-spacing:-0.5px;
+  text-shadow:0 14px 60px rgba(0,0,0,1);
+}
+#loaderBounce{
+  display:inline-block;
+  animation:bounce 0.95s ease-in-out infinite;
+}
+@keyframes bounce{
+  0%,100%{ transform:translateY(0) }
+  50%{ transform:translateY(-10px) }
+}
+#loaderSub{
+  margin-top:10px;
+  font:12px/1.4 "Roboto", sans-serif;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  opacity:.72;
+}
+#loaderBarWrap{
+  margin:18px auto 0;
+  width:min(520px, 86vw);
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.10);
+  border:1px solid rgba(255,255,255,0.14);
+  overflow:hidden;
+}
+#loaderBar{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(170,60,255,0.9), rgba(255,230,60,0.9));
+  box-shadow:0 0 18px rgba(170,60,255,0.35), 0 0 18px rgba(255,230,60,0.25);
+}
+#loaderPct{
+  margin-top:10px;
+  font:12px/1 "Roboto", sans-serif;
+  opacity:.75;
+}
+
+/* tiny top progress that can remain while background loads */
+#topProgress{
+  position:fixed; left:0; top:0; height:3px; width:0%;
+  z-index:120;
+  background:linear-gradient(90deg, rgba(170,60,255,0.9), rgba(255,230,60,0.9));
+  opacity:0;
+  transition:opacity .25s ease, width .12s linear;
+}
+#topProgress.show{ opacity:1; }
 
 /* ===== Cursor canvas (neon trail) ===== */
 #cursor-canvas{
@@ -25,9 +99,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#050505;color:#fff}
   pointer-events:none;
 }
 
-/* ===== CANVAS BG (Particles) =====
-   Above cover: stage is 10, canvas is 15
-*/
+/* ===== CANVAS BG (Particles) ===== */
 #bg-canvas{
   position:fixed; inset:0;
   z-index:15;
@@ -50,7 +122,7 @@ body[data-active-style="thriller"] #fx-layer{
   filter: contrast(1.2) brightness(0.9) sepia(0.2);
 }
 
-/* AMORE (romantico) */
+/* AMORE */
 body[data-active-style="amore"] #fx-layer{
   background:
     radial-gradient(circle at 30% 30%, rgba(255,120,170,0.22) 0%, transparent 55%),
@@ -62,18 +134,13 @@ body[data-active-style="amore"] #fx-layer{
 }
 @keyframes lovePulse{0%{opacity:.78}50%{opacity:1}100%{opacity:.78}}
 
-/* SEXY (pimp neon: violet + hot yellow) */
+/* SEXY */
 body[data-active-style="sexy"] #fx-layer{
   background:
-    /* neon spotlights */
     radial-gradient(closest-side at 22% 25%, rgba(170, 60, 255, 0.48) 0%, transparent 60%),
     radial-gradient(closest-side at 78% 35%, rgba(255, 230, 60, 0.40) 0%, transparent 58%),
     radial-gradient(closest-side at 60% 78%, rgba(255, 60, 200, 0.22) 0%, transparent 62%),
-
-    /* glow wash */
     radial-gradient(circle at 50% 55%, rgba(40, 0, 70, 0.0) 0%, rgba(18, 0, 25, 0.88) 75%),
-
-    /* subtle scanlines */
     repeating-linear-gradient(
       0deg,
       rgba(255,255,255,0.055) 0px,
@@ -124,7 +191,7 @@ body[data-active-style="normale"] #fx-layer{
   background-size:contain;
   will-change:transform,opacity;
   opacity:0;
-  cursor:pointer; /* semantics */
+  cursor:pointer;
 }
 .scene::before{
   content:"";
@@ -152,10 +219,8 @@ body[data-active-style="normale"] #fx-layer{
 }
 .scene > *{position:relative; z-index:2}
 
-/* Extra “sexy neon rim” on cover */
-body[data-active-style="sexy"] .scene{
-  filter: saturate(1.12) contrast(1.05);
-}
+/* Sexy cover rim */
+body[data-active-style="sexy"] .scene{ filter: saturate(1.12) contrast(1.05); }
 body[data-active-style="sexy"] .scene::before{
   background:
     radial-gradient(circle at 50% 55%, rgba(255,230,60,0.10) 0%, transparent 45%),
@@ -164,7 +229,7 @@ body[data-active-style="sexy"] .scene::before{
   mix-blend-mode: screen;
 }
 
-/* THUMP EFFECT */
+/* THUMP */
 @keyframes thumpAnim{
   0%{transform:scale(1)}
   50%{transform:scale(1.02);filter:brightness(1.1)}
@@ -212,7 +277,7 @@ body[data-active-style="sexy"] .scene::before{
     0 0 14px rgba(255,230,60,0.22);
 }
 
-/* ===== TUTORIAL (top-left) ===== */
+/* ===== TUTORIAL ===== */
 #tutorial{
   position:fixed; top:18px; left:18px; z-index:60;
   font:12px/1.5 "Roboto", sans-serif;
@@ -285,8 +350,9 @@ body[data-active-style="sexy"]     #line{
 .t-jitter{transform:translateX(-6px) rotate(.8deg);filter:none}
 
 /* ===== Player & Title ===== */
+/* (FIX #1) Title più in alto rispetto al player */
 #playerTitle{
-  position:fixed; bottom:88px; left:40px; z-index:32;
+  position:fixed; bottom:168px; left:40px; z-index:32;
   font:700 32px/1 "Roboto", sans-serif; color:#fff;
   opacity:0; transform:translateY(20px); transition:all .5s ease;
   text-shadow:0 10px 30px rgba(0,0,0,1); letter-spacing:-0.5px;
@@ -303,7 +369,7 @@ body[data-active-style="sexy"]     #line{
 #seekbar{
   position:fixed;
   left:40px;
-  bottom:118px;
+  bottom:126px;
   width:clamp(260px, 36vw, 560px);
   z-index:33;
   opacity:0;
@@ -352,7 +418,7 @@ body[data-active-style="sexy"]     #line{
 }
 
 /* =========================
-   Controls (2 righe)
+   Controls
    ========================= */
 #controls{
   position:fixed;
@@ -389,7 +455,7 @@ body[data-active-style="sexy"]     #line{
   border-color:#fff;
 }
 
-/* Tooltip on hover: uses data-tip attribute */
+/* Tooltip */
 #controls button[data-tip]::after{
   content: attr(data-tip);
   position:absolute;
@@ -415,7 +481,6 @@ body[data-active-style="sexy"]     #line{
   opacity:1;
   transform:translateX(-50%) translateY(-14px);
 }
-/* little caret */
 #controls button[data-tip]::before{
   content:"";
   position:absolute;
@@ -440,13 +505,14 @@ body[data-active-style="sexy"]     #line{
 
 @media (max-width:600px){
   #tutorial{max-width:80vw}
-  #playerTitle{font-size:22px; bottom:88px; left:18px}
+  #playerTitle{font-size:22px; bottom:200px; left:18px}
+  #seekbar{left:18px; bottom:152px; width:calc(100vw - 36px);}
   #controls{left:18px; gap:10px}
   #controls button{padding:8px 12px}
 }
 
 /* =========================
-   MOBILE: UI semplice + più leggera
+   MOBILE: alleggerito + swipe up/down
    ========================= */
 #mobileApp{display:none;}
 @media (max-width:780px), (hover:none) and (pointer:coarse){
@@ -459,10 +525,16 @@ body[data-mode="mobile"] #fx-layer,
 body[data-mode="mobile"] #cursor-canvas,
 body[data-mode="mobile"] #stage,
 body[data-mode="mobile"] #minimap,
-body[data-mode="mobile"] #tutorial,
-body[data-mode="mobile"] #playerTitle,
+body[data-mode="mobile"] #tutorial{
+  display:none !important; /* (FIX #2) niente effetti che si muovono */
+}
+
+/* su mobile teniamo karaoke (line) ma lo spostiamo nella UI */
 body[data-mode="mobile"] #karaoke{
-  display:none !important;
+  position:static !important;
+  inset:auto !important;
+  padding:0 !important;
+  display:block !important;
 }
 
 body[data-mode="mobile"] #mobileApp{
@@ -484,15 +556,15 @@ body[data-mode="mobile"] #mobileApp{
   background-image: var(--m-bg);
   background-size:cover;
   background-position:center;
-  filter: blur(26px) saturate(1.2) brightness(0.6);
-  transform:scale(1.2);
-  opacity:0.65;
+  filter: blur(20px) saturate(1.05) brightness(0.58);
+  transform:scale(1.15);
+  opacity:0.55;
 }
 #mobileApp::after{
   content:"";
   position:absolute;
   inset:0;
-  background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.92));
+  background:linear-gradient(180deg, rgba(0,0,0,0.20), rgba(0,0,0,0.92));
 }
 
 #mobileUI{
@@ -534,10 +606,10 @@ body[data-mode="mobile"] #mobileApp{
 
 #mLyrics{
   padding: 8px 16px 12px;
-  min-height:56px;
+  min-height:54px;
 }
 
-/* #line lo spostiamo dentro #mLyrics via JS */
+/* #line dentro #mLyrics */
 body[data-mode="mobile"] #line{
   max-width:none;
   font-size:clamp(20px, 5.2vw, 28px);
@@ -551,6 +623,7 @@ body[data-mode="mobile"] #line{
   display:flex;
   flex-direction:column;
   gap:10px;
+  -webkit-overflow-scrolling:touch;
 }
 .mTrack{
   width:100%;
@@ -586,12 +659,10 @@ body[data-mode="mobile"] #line{
   font:700 11px/1 "Roboto", sans-serif;
   opacity:.7;
 }
-.mTrack.active{
-  border-color: rgba(255,255,255,0.28);
-}
+.mTrack.active{ border-color: rgba(255,255,255,0.28); }
 .mTrack.playing{
   border-color: rgba(170,60,255,0.40);
-  background: rgba(170,60,255,0.14);
+  background: rgba(170,60,255,0.12);
 }
 
 #mBottom{
@@ -601,7 +672,8 @@ body[data-mode="mobile"] #line{
   backdrop-filter: blur(10px);
 }
 
-/* seekbar + controls diventano "normali" nel bottom */
+body[data-mode="mobile"] #playerTitle{ display:none !important; }
+
 body[data-mode="mobile"] #seekbar{
   position:static;
   width:100%;
@@ -622,9 +694,7 @@ body[data-mode="mobile"] .controls-row{
   justify-content:space-between;
   width:100%;
 }
-body[data-mode="mobile"] .controls-row.primary button{
-  flex:1;
-}
+body[data-mode="mobile"] .controls-row.primary button{ flex:1; }
 body[data-mode="mobile"] #controls button{
   padding:10px 12px;
   border-radius:16px;
@@ -633,6 +703,17 @@ body[data-mode="mobile"] #controls button{
 </head>
 
 <body data-active-style="normale">
+
+<!-- Loader (FIX #0) -->
+<div id="loader" aria-label="Caricamento">
+  <div id="loaderBox">
+    <div id="loaderTitle"><span id="loaderBounce">Davide*Kra — Sai Tenere Un Segreto?</span></div>
+    <div id="loaderSub">Caricamento in corso…</div>
+    <div id="loaderBarWrap"><div id="loaderBar"></div></div>
+    <div id="loaderPct">0%</div>
+  </div>
+</div>
+<div id="topProgress"></div>
 
 <canvas id="bg-canvas"></canvas>
 <div id="fx-layer"></div>
@@ -659,7 +740,6 @@ body[data-mode="mobile"] #controls button{
   <div id="pt-song">Track Name</div>
 </div>
 
-<!-- NEW: Seek bar -->
 <div id="seekbar" aria-label="Posizione traccia">
   <input id="seek" type="range" min="0" max="1000" value="0" step="1" />
   <div class="seek-times">
@@ -668,7 +748,6 @@ body[data-mode="mobile"] #controls button{
   </div>
 </div>
 
-<!-- Controls (2 righe + shuffle/repeat) -->
 <div id="controls">
   <div class="controls-row primary">
     <button id="prevTrack" data-tip="Traccia precedente">&laquo;&laquo;</button>
@@ -684,7 +763,7 @@ body[data-mode="mobile"] #controls button{
   </div>
 </div>
 
-<!-- NEW: Mobile UI semplice -->
+<!-- Mobile UI -->
 <div id="mobileApp" hidden>
   <div id="mobileUI">
     <div id="mNow">
@@ -705,7 +784,7 @@ body[data-mode="mobile"] #controls button{
 
 <script>
 /* =========================
-   TRACKS (Covers + BPM + Styles)
+   TRACKS
    ========================= */
 const tracks = [
   { artist:"Davide*Kra", title:"In throw", slug:"in-throw", bpm:90, style:"normale",
@@ -771,7 +850,6 @@ const tracks = [
   { artist:"Davide*Kra", title:"Nera", slug:"nera", bpm:90, style:"thriller",
     cover:"https://i.ibb.co/G4bJyYzZ/Nera.png", audio:"DavideKra - 21 - Nera.mp3", vtt:"DavideKra - 21 - Nera.vtt" },
 
-  /* Se nel repo il file è "Chaplin" (non "Champlin"), cambia qui sotto entrambe le stringhe. */
   { artist:"Davide*Kra", title:"Film Di Chaplin", slug:"film-di-chaplin", bpm:120, style:"amore",
     cover:"https://i.ibb.co/S4K7Y8xH/Film-Di-Chaplin.png", audio:"DavideKra - 22 - Film Di Champlin.mp3", vtt:"DavideKra - 22 - Film Di Champlin.vtt" }
 ];
@@ -806,7 +884,83 @@ const isMobile = window.matchMedia("(max-width: 780px), (hover: none) and (point
 document.body.dataset.mode = isMobile ? "mobile" : "desktop";
 
 /* =========================
-   PARTICLES CANVAS
+   LOADER + preloading covers (FIX #0)
+   ========================= */
+const loader = document.getElementById("loader");
+const loaderBar = document.getElementById("loaderBar");
+const loaderPct = document.getElementById("loaderPct");
+const topProgress = document.getElementById("topProgress");
+
+function setProgress(p){
+  const pct = clamp(p,0,100);
+  loaderBar.style.width = pct.toFixed(0) + "%";
+  loaderPct.textContent = pct.toFixed(0) + "%";
+  topProgress.style.width = pct.toFixed(0) + "%";
+}
+
+function loadImage(src){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = ()=> resolve(true);
+    img.onerror = ()=> resolve(false);
+    img.src = src;
+  });
+}
+
+/* Carico cover in background con concorrenza limitata.
+   Mostro il loader finché non sono pronte: fonts + prima cover + un minimo di cover */
+async function preloadCoversWithProgress(concurrency=4){
+  const urls = tracks.map(t=>t.cover);
+  const total = urls.length;
+  let done = 0;
+  let idx = 0;
+
+  topProgress.classList.add("show");
+  setProgress(0);
+
+  const worker = async ()=>{
+    while(idx < total){
+      const my = idx++;
+      await loadImage(urls[my]);
+      done++;
+      setProgress((done/total)*100);
+    }
+  };
+
+  const workers = [];
+  for(let i=0;i<Math.min(concurrency,total);i++) workers.push(worker());
+  await Promise.all(workers);
+
+  // done
+  setTimeout(()=> topProgress.classList.remove("show"), 650);
+}
+
+async function waitFonts(){
+  try{
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+  }catch(e){}
+}
+
+async function runLoaderGate(){
+  // avvio preload completo (ma non blocco tutto)
+  const fullPreloadPromise = preloadCoversWithProgress(4);
+
+  // gate: fonts + prima cover
+  await Promise.all([waitFonts(), loadImage(tracks[0].cover)]);
+
+  // piccolo minimo “percezione”: aspetto almeno un filo di progress o un minimo tempo
+  await new Promise(r=>setTimeout(r, 450));
+
+  // chiudo loader (il preload continua a finire e aggiorna la top bar)
+  loader.classList.add("hide");
+  setTimeout(()=>{ try{ loader.remove(); }catch(e){} }, 800);
+
+  return fullPreloadPromise;
+}
+
+/* =========================
+   PARTICLES CANVAS (desktop only)
    ========================= */
 const bgCanvas = document.getElementById('bg-canvas');
 const bgCtx = bgCanvas.getContext('2d', { alpha:true });
@@ -861,7 +1015,6 @@ class Particle{
       }
 
     } else if(style === 'sexy'){
-      /* pimp neon: embers + bokeh orbs */
       this.isOrb = Math.random() > 0.55;
       if(this.isOrb){
         this.vx = (Math.random()-0.5) * 0.35 * dpr;
@@ -1076,7 +1229,6 @@ const playBtn=document.getElementById("play");
 const prevBtn=document.getElementById("prevTrack");
 const nextBtn=document.getElementById("nextTrack");
 
-/* NEW: Seek + shuffle/repeat + mobile refs */
 const seekbar = document.getElementById("seekbar");
 const seek    = document.getElementById("seek");
 const seekCur = document.getElementById("seekCur");
@@ -1085,24 +1237,24 @@ const seekDur = document.getElementById("seekDur");
 const shuffleBtn = document.getElementById("shuffle");
 const repeatBtn  = document.getElementById("repeat");
 
-/* Shuffle + Repeat state */
 let shuffleOn = false;
 let repeatMode = 0; // 0=no, 1=all, 2=one
 let shuffleBag = [];
 let shuffleHistory = [];
 
-/* Mobile UI refs */
+/* Mobile refs */
 const mobileApp = document.getElementById("mobileApp");
 const mCover  = document.getElementById("mCover");
 const mSongEl = document.getElementById("mSong");
 const mArtistEl = document.getElementById("mArtist");
 const mList = document.getElementById("mList");
 const mBottom = document.getElementById("mBottom");
+const mLyrics = document.getElementById("mLyrics");
 let mItems = []; // {btn, state}
 
 function setActiveStyle(styleKey){
   document.body.dataset.activeStyle = styleKey || "normale";
-  updateCanvasEffect(styleKey || "normale");
+  if(!isMobile) updateCanvasEffect(styleKey || "normale");
 }
 
 function updateMobileUI(){
@@ -1127,9 +1279,6 @@ function updateURL(){
   if(location.hash !== hash) history.replaceState(null, "", hash);
 }
 
-/* =========================
-   SHUFFLE + REPEAT
-   ========================= */
 function refillShuffleBag(excludeIndex){
   shuffleBag = [];
   for(let i=0;i<scenes.length;i++){
@@ -1156,19 +1305,19 @@ function updateShuffleRepeatUI(){
   shuffleBtn.classList.toggle("on", shuffleOn);
   shuffleBtn.textContent = shuffleOn ? "SHUFFLE: ON" : "SHUFFLE: OFF";
   shuffleBtn.dataset.tip = shuffleOn
-    ? "Shuffle attivo (niente ripetizioni finché non finiscono i brani)"
+    ? "Shuffle attivo"
     : "Shuffle disattivo";
 
   repeatBtn.classList.toggle("on", repeatMode !== 0);
   if(repeatMode === 0){
     repeatBtn.textContent = "REPEAT: NO";
-    repeatBtn.dataset.tip = "Repeat: NO (si ferma all'ultima traccia)";
+    repeatBtn.dataset.tip = "Repeat: NO";
   } else if(repeatMode === 1){
     repeatBtn.textContent = "REPEAT: ALL";
-    repeatBtn.dataset.tip = "Repeat: ALL (ripete l'album)";
+    repeatBtn.dataset.tip = "Repeat: ALL";
   } else {
     repeatBtn.textContent = "REPEAT: ONE";
-    repeatBtn.dataset.tip = "Repeat: ONE (ripete la traccia corrente)";
+    repeatBtn.dataset.tip = "Repeat: ONE";
   }
 }
 
@@ -1176,7 +1325,6 @@ function setShuffle(on){
   shuffleOn = !!on;
   shuffleHistory = [];
   shuffleBag = [];
-
   const exclude = (playingIndex !== null) ? playingIndex : activeIndex;
   if(shuffleOn){
     refillShuffleBag(exclude);
@@ -1185,17 +1333,14 @@ function setShuffle(on){
   updateShuffleRepeatUI();
   updatePrevNextTooltips();
 }
-
 function cycleRepeat(){
   repeatMode = (repeatMode + 1) % 3;
   updateShuffleRepeatUI();
   updatePrevNextTooltips();
 }
-
 shuffleBtn.addEventListener("click", ()=> setShuffle(!shuffleOn));
 repeatBtn.addEventListener("click", cycleRepeat);
 
-/* tooltip titles for prev/next */
 function updatePrevNextTooltips(){
   if(shuffleOn){
     prevBtn.dataset.tip = "Prev (shuffle history)";
@@ -1209,7 +1354,7 @@ function updatePrevNextTooltips(){
 }
 
 /* =========================
-   CAMERA & SNAP
+   CAMERA & SNAP (desktop)
    ========================= */
 let cameraZ=0, targetZ=0, activeIndex=0, lastActiveIndex=-1;
 const SPEED=0.95;
@@ -1250,17 +1395,12 @@ function jumpToIndex(i, autoplay){
   pendingPlayIndex = autoplay ? i : null;
 }
 
-/* =========================
-   NAV wrapper: desktop = camera jump, mobile = immediato
-   ========================= */
+/* Desktop = camera jump; Mobile = immediato */
 function goToIndex(i, autoplay){
   if(isMobile){
     activeIndex = clamp(i, 0, scenes.length-1);
     lastActiveIndex = -1;
-
-    // mobile: stile unico e leggero
     document.body.dataset.activeStyle = "normale";
-
     updateHUD();
     updateURL();
     updatePrevNextTooltips();
@@ -1272,7 +1412,7 @@ function goToIndex(i, autoplay){
 }
 
 /* =========================
-   AUDIO ENGINE (crossfade + karaoke)
+   AUDIO ENGINE
    ========================= */
 const audioA=document.getElementById("audioA");
 const audioB=document.getElementById("audioB");
@@ -1357,7 +1497,7 @@ function bindKaraokeTo(playerEl, trackObj){
 }
 
 /* =========================
-   SEEK BAR logic (drag & resume)
+   SEEK BAR (drag & resume)
    ========================= */
 let isSeeking = false;
 let resumeAfterSeek = false;
@@ -1409,7 +1549,6 @@ function onSeekStart(){
   resumeAfterSeek = !a.paused;
   if(resumeAfterSeek) a.pause();
 }
-
 function onSeekMove(){
   if(!isSeeking) return;
   const a = getCurrentAudio();
@@ -1418,12 +1557,10 @@ function onSeekMove(){
   const t = (seek.value/1000) * dur;
   seekCur.textContent = fmtTime(t);
 }
-
 async function onSeekEnd(){
   if(!isSeeking) return;
   const a = getCurrentAudio();
   const dur = a.duration;
-
   isSeeking = false;
 
   if(isFinite(dur) && dur > 0){
@@ -1463,13 +1600,11 @@ function updatePlayingUI(){
 
   playBtn.textContent = (isPlaying && activeIndex===playingIndex) ? "PAUSE" : "PLAY";
 
-  // seekbar: visibile su desktop solo quando sei sulla traccia attiva in player
   if(isMobile) seekbar.classList.add("visible");
   else seekbar.classList.toggle("visible", (playingIndex!==null && activeIndex===playingIndex));
 
   syncSeekUI();
 
-  /* MOBILE: aggiorna playlist e stoppa qui (super leggero) */
   if(isMobile){
     if(mItems.length){
       mItems.forEach((obj,i)=>{
@@ -1482,7 +1617,6 @@ function updatePlayingUI(){
     return;
   }
 
-  /* DESKTOP: comportamento originale */
   scenes.forEach((s,i)=>{
     s.el.classList.toggle("is-playing", (playingIndex===i && isPlaying));
   });
@@ -1507,7 +1641,6 @@ function updatePlayingUI(){
 }
 
 async function playIndex(index, mode){
-  // mode: "toggle" | "force"
   ensureAudioGraph();
   await audioCtx.resume();
 
@@ -1540,7 +1673,6 @@ async function playIndex(index, mode){
     return;
   }
 
-  // crossfade
   const FADE=1.15;
   const prevAudio=getCurrentAudio();
   const nextAudio=getOtherAudio();
@@ -1584,20 +1716,19 @@ async function playOrToggle(){
 /* Autoplay next when track ends */
 function computeNextAutoIndex(){
   if(playingIndex === null) return null;
-
-  if(repeatMode === 2) return playingIndex; // repeat one
+  if(repeatMode === 2) return playingIndex;
 
   const base = playingIndex;
 
   if(shuffleOn){
-    const allowRefill = (repeatMode === 1); // solo repeat-all
+    const allowRefill = (repeatMode === 1);
     return shufflePickNext(base, allowRefill);
   }
 
   const nxt = base + 1;
   if(nxt < scenes.length) return nxt;
   if(repeatMode === 1) return 0;
-  return null; // stop at end
+  return null;
 }
 
 function handleEnded(endedEl){
@@ -1618,7 +1749,6 @@ function handleEnded(endedEl){
     updatePlayingUI();
     return;
   }
-
   goToIndex(nextIndex, true);
 }
 audioA.addEventListener("ended", ()=>handleEnded(audioA));
@@ -1636,23 +1766,16 @@ document.getElementById("forward").addEventListener("click", ()=>{
   a.currentTime = Math.min((a.duration||0), (a.currentTime||0) + 10);
 });
 
-/* Prev/Next track buttons: rispettano shuffle/repeat */
 function computeNextIndexManual(){
   const base = (playingIndex !== null) ? playingIndex : activeIndex;
-
-  if(shuffleOn){
-    return shufflePickNext(base, true);
-  }
-
+  if(shuffleOn) return shufflePickNext(base, true);
   const nxt = base + 1;
   if(nxt < scenes.length) return nxt;
   if(repeatMode === 1) return 0;
   return null;
 }
-
 function computePrevIndexManual(){
   const base = (playingIndex !== null) ? playingIndex : activeIndex;
-
   if(shuffleOn){
     if(shuffleHistory.length > 1){
       shuffleHistory.pop();
@@ -1660,7 +1783,6 @@ function computePrevIndexManual(){
     }
     return base;
   }
-
   const prev = base - 1;
   if(prev >= 0) return prev;
   if(repeatMode === 1) return scenes.length - 1;
@@ -1686,7 +1808,6 @@ function scrub(deltaY){
   if(activeIndex!==playingIndex) line.style.opacity=0;
 }
 
-/* wheel solo desktop */
 if(!isMobile){
   window.addEventListener("wheel",(e)=>{
     e.preventDefault();
@@ -1741,7 +1862,6 @@ function tick(){
   }
   if(Math.abs(diff) < 0.35) cameraZ = targetZ;
 
-  // pending autoplay: start when close to target
   if(pendingPlayIndex !== null && Math.abs(diff) < 3){
     const idx = pendingPlayIndex;
     pendingPlayIndex = null;
@@ -1763,7 +1883,7 @@ if(!isMobile){
 }
 
 /* =========================
-   NEON CURSOR (trail) - desktop only
+   NEON CURSOR (desktop only)
    ========================= */
 const cursorCanvas = document.getElementById("cursor-canvas");
 const cursorCtx = cursorCanvas.getContext("2d", { alpha:true });
@@ -1781,7 +1901,7 @@ window.addEventListener("resize", resizeCursorCanvas);
 resizeCursorCanvas();
 
 let mx = window.innerWidth/2, my = window.innerHeight/2;
-let trail = []; // {x,y,t}
+let trail = [];
 const TRAIL_MAX = 42;
 
 if(!isMobile){
@@ -1845,7 +1965,7 @@ function drawCursor(){
 }
 
 /* =========================
-   MOBILE init
+   MOBILE init + swipe up/down (FIX #2)
    ========================= */
 function initMobileUI(){
   if(!isMobile) return;
@@ -1858,9 +1978,9 @@ function initMobileUI(){
     mBottom.appendChild(document.getElementById("controls"));
   }catch(e){}
 
-  // sposta #line dentro mLyrics
+  // sposta #line dentro lyrics
   try{
-    document.getElementById("mLyrics").appendChild(line);
+    mLyrics.appendChild(line);
   }catch(e){}
 
   // playlist
@@ -1888,15 +2008,55 @@ function initMobileUI(){
     else playOrToggle();
   });
 
-  document.body.dataset.activeStyle = "normale";
+  // swipe su/giù per cambiare traccia (ma NON quando stai scrollando la lista)
+  let sx=0, sy=0, st=0, tracking=false;
+  mobileApp.addEventListener("touchstart", (e)=>{
+    const t = e.touches && e.touches[0];
+    if(!t) return;
+    // se parti dalla lista, lasciamo lo scroll normale
+    if(e.target && e.target.closest && e.target.closest("#mList")) return;
+    tracking = true;
+    sx = t.clientX; sy = t.clientY;
+    st = Date.now();
+  }, {passive:true});
 
+  mobileApp.addEventListener("touchend", (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    const t = e.changedTouches && e.changedTouches[0];
+    if(!t) return;
+    const dx = t.clientX - sx;
+    const dy = t.clientY - sy;
+    const dt = Date.now() - st;
+
+    // swipe verticale deciso
+    if(dt < 600 && Math.abs(dy) > 55 && Math.abs(dy) > Math.abs(dx)*1.2){
+      if(dy < 0){
+        // swipe up => next
+        const nxt = (activeIndex + 1) % scenes.length;
+        goToIndex(nxt, true);
+      }else{
+        // swipe down => prev
+        const prv = (activeIndex - 1 + scenes.length) % scenes.length;
+        goToIndex(prv, true);
+      }
+    }
+  }, {passive:true});
+
+  document.body.dataset.activeStyle = "normale";
   updateHUD();
   updateShuffleRepeatUI();
+  updatePrevNextTooltips();
   updatePlayingUI();
 }
 
-/* INIT */
-window.addEventListener("load", ()=>{
+/* =========================
+   INIT
+   ========================= */
+window.addEventListener("load", async ()=>{
+  // loader gate + preload in background
+  runLoaderGate().catch(()=>{});
+
   // hash jump
   const hash = location.hash.slice(1);
   if(hash){
@@ -1910,21 +2070,22 @@ window.addEventListener("load", ()=>{
 
   updateShuffleRepeatUI();
   updatePrevNextTooltips();
+  updateHUD();
 
   if(isMobile){
     initMobileUI();
-    return; // no heavy loops on mobile
+    return; // no loops, niente roba che si muove
   }
 
-  updateCanvasEffect(tracks[activeIndex].style);
+  // desktop init
   setActiveStyle(tracks[activeIndex].style);
+  updateCanvasEffect(tracks[activeIndex].style);
 
   if(particles.length === 0){
     for(let i=0;i<120;i++) particles.push(new Particle("normale"));
   }
 
   loopBgCanvas();
-  updateHUD();
   updateScenes();
   playerTitleBlock.classList.add("visible");
 
